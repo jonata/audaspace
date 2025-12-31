@@ -83,43 +83,18 @@ jobs:
           
           # Linux configuration
           CIBW_BEFORE_ALL_LINUX: >
-            yum install -y epel-release &&
-            yum install -y
-              gcc gcc-c++ make
-              cmake pkgconfig
-              nasm yasm
-              libsndfile-devel
-              openal-soft-devel
-              SDL2-devel
-              fftw-devel
-              jack-audio-connection-kit-devel
-              pulseaudio-libs-devel
-              libX11-devel libXext-devel libXfixes-devel libXrandr-devel &&
-            git clone https://git.ffmpeg.org/ffmpeg.git /tmp/ffmpeg &&
-            cd /tmp/ffmpeg &&
-            ./configure
-              --prefix=/opt/ffmpeg
-              --enable-shared
-              --disable-static
-              --disable-debug
-              --disable-doc
-              --disable-programs
-              --disable-everything
-              --enable-avcodec
-              --enable-avformat
-              --enable-avutil
-              --enable-swresample &&
-            make -j$(nproc) &&
-            make install &&
-            git clone https://github.com/breakfastquay/rubberband.git /tmp/rubberband &&
-            cd /tmp/rubberband &&
-            mkdir build && cd build &&
-            cmake ..
-              -DCMAKE_INSTALL_PREFIX=/opt/rubberband
-              -DBUILD_SHARED_LIBS=ON
-              -DRUBBERBAND_BUILD_PROGRAMS=OFF &&
-            make -j$(nproc) &&
-            make install
+            yum install -y epel-release && yum install -y gcc gcc-c++ make cmake pkgconfig nasm yasm libsndfile-devel openal-soft-devel SDL2-devel fftw-devel jack-audio-connection-kit-devel pulseaudio-libs-devel libX11-devel libXext-devel libXfixes-devel libXrandr-devel;
+            git clone https://git.ffmpeg.org/ffmpeg.git /tmp/ffmpeg;
+            cd /tmp/ffmpeg;
+            ./configure --prefix=/opt/ffmpeg --enable-shared --disable-static --disable-debug --disable-doc --disable-programs --disable-everything --enable-avcodec --enable-avformat --enable-avutil --enable-swresample;
+            make -j$(nproc);
+            make install;
+            git clone https://github.com/breakfastquay/rubberband.git /tmp/rubberband;
+            cd /tmp/rubberband;
+            mkdir build && cd build;
+            cmake .. -DCMAKE_INSTALL_PREFIX=/opt/rubberband -DBUILD_SHARED_LIBS=ON -DRUBBERBAND_BUILD_PROGRAMS=OFF;
+            make -j$(nproc);
+            make install;
 
           CIBW_ENVIRONMENT_LINUX: >
             PKG_CONFIG_PATH=/opt/ffmpeg/lib/pkgconfig:/opt/rubberband/lib/pkgconfig
@@ -132,7 +107,7 @@ jobs:
             
           # macOS configuration
           CIBW_BEFORE_ALL_MACOS: >
-            brew install ffmpeg libsndfile sdl2 fftw rubberband jack || true
+            brew install ffmpeg libsndfile sdl2 fftw rubberband jack || true;
           
           CIBW_ENVIRONMENT_MACOS: >
             WITH_COREAUDIO=ON
@@ -142,31 +117,22 @@ jobs:
           
           # Windows configuration
           CIBW_BEFORE_BUILD_WINDOWS: >
-            pip install delvewheel
+            pip install delvewheel;
                     
           CIBW_BEFORE_ALL_WINDOWS: >
-            choco install -y nasm cmake &&
-            git clone https://github.com/FFTW/fftw3.git C:\fftw &&
-            cd C:\fftw &&
-            cmake -S . -B build
-              -DCMAKE_INSTALL_PREFIX=C:\fftw-install
-              -DBUILD_SHARED_LIBS=ON
-              -DENABLE_FLOAT=ON
-              -DENABLE_DOUBLE=OFF
-              -DENABLE_LONG_DOUBLE=OFF &&
-            cmake --build build --config Release &&
-            cmake --install build &&
-            git clone https://git.ffmpeg.org/ffmpeg.git C:\ffmpeg &&
-            cd C:\ffmpeg &&
-            mkdir build &&
-            cd build &&
-            cmake .. -G "NMake Makefiles"
-              -DCMAKE_INSTALL_PREFIX=C:\ffmpeg-install
-              -DBUILD_SHARED_LIBS=ON
-              -DENABLE_PROGRAMS=OFF
-              -DENABLE_DOC=OFF &&
-            cmake --build . --config Release &&
-            cmake --install .
+            choco install -y nasm cmake;
+            git clone https://github.com/FFTW/fftw3.git C:\fftw;
+            cd C:\fftw;
+            cmake -S . -B build -DCMAKE_INSTALL_PREFIX=C:\fftw-install -DBUILD_SHARED_LIBS=ON -DENABLE_FLOAT=ON -DENABLE_DOUBLE=OFF -DENABLE_LONG_DOUBLE=OFF;
+            cmake --build build --config Release;
+            cmake --install build;
+            git clone https://git.ffmpeg.org/ffmpeg.git C:\ffmpeg;
+            cd C:\ffmpeg;
+            mkdir build;
+            cd build;
+            cmake .. -G "NMake Makefiles" -DCMAKE_INSTALL_PREFIX=C:\ffmpeg-install -DBUILD_SHARED_LIBS=ON -DENABLE_PROGRAMS=OFF -DENABLE_DOC=OFF;
+            cmake --build . --config Release;
+            cmake --install .;
 
           CIBW_ENVIRONMENT_WINDOWS: >
             WITH_WASAPI=ON
@@ -174,9 +140,9 @@ jobs:
             FFMPEG_DIR=C:\ffmpeg-install
             PATH=C:\fftw-install\bin;C:\ffmpeg-install\bin;%PATH%
             WITH_FFMPEG=ON
-            
+
         run: |
-          python -m cibuildwheel --output-dir wheelhouse
+          python -m cibuildwheel --output-dir wheelhouse;
 
       # ------------------------
       # Inline wheel test script
