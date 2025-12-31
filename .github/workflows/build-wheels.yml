@@ -1,0 +1,156 @@
+name: Build and Test Wheels
+
+on:
+  push:
+    branches: [ main, master, github-actions-tests ]
+    tags:
+      - "v*"
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build_wheels:
+    name: Build & test wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-24.04
+          - macos-15
+          - windows-2025
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+
+      - name: Install build tools
+        run: python -m pip install cibuildwheel build twine numpy
+
+      # ------------------------
+      # Linux dependencies
+      # ------------------------
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libavcodec-dev \
+            libavformat-dev \
+            libavutil-dev \
+            libsndfile1-dev \
+            libopenal-dev \
+            libsdl2-dev \
+            libfftw3-dev \
+            pkg-config
+
+      # ------------------------
+      # macOS dependencies
+      # ------------------------
+      - name: Install macOS dependencies
+        if: runner.os == 'macOS'
+        run: |
+          brew update
+          brew install ffmpeg libsndfile sdl2 fftw
+
+      # ------------------------
+      # Windows dependencies
+      # ------------------------
+      - name: Install Windows dependencies
+        if: runner.os == 'Windows'
+        run: |
+          choco install -y ffmpeg
+          python -m pip install delvewheel
+
+      # ------------------------
+      # Build wheels
+      # ------------------------
+      - name: Build wheels with cibuildwheel
+        env:
+          CIBW_BUILD: "cp38-* cp39-* cp310-* cp311-* cp312-*"
+          CIBW_SKIP: "*-musllinux_*"
+          CIBW_BUILD_VERBOSITY: "1"
+
+          WITH_PULSEAUDIO: "ON"
+          WITH_PIPEWIRE: "ON"
+          WITH_JACK: "ON"
+          WITH_COREAUDIO: "ON"
+          WITH_WASAPI: "ON"
+
+          MACOSX_DEPLOYMENT_TARGET: "10.15"
+
+        run: |
+          python -m cibuildwheel --output-dir wheelhouse
+
+      # ------------------------
+      # Inline wheel test script
+      # ------------------------
+      - name: Create wheel test script
+        run: |
+          cat << 'EOF' > test_wheel.py
+          import aud
+          import numpy as np
+
+          def main():
+              device = aud.Device()
+              assert device.channels > 0
+              assert device.rate > 0
+
+              t = np.linspace(0, 0.1, 4410, False)
+              sound = aud.Sound.buffer(
+                  np.sin(2 * np.pi * 440 * t).astype(np.float32),
+                  44100,
+              )
+
+              handle = device.play(sound)
+              handle.stop()
+
+              codecs = [x for x in dir(aud) if x.startswith("CODEC_")]
+              containers = [x for x in dir(aud) if x.startswith("CONTAINER_")]
+              assert codecs
+              assert containers
+
+              aud.HRTF()
+
+              seq = aud.Sequence()
+              seq.add(sound, 0, 0, -1)
+
+              if hasattr(aud, "PlaybackManager"):
+                  aud.PlaybackManager()
+
+              if hasattr(aud, "ThreadPool"):
+                  aud.ThreadPool()
+
+              print("✔ Audaspace wheel test passed")
+
+          if __name__ == "__main__":
+              main()
+          EOF
+
+      # ------------------------
+      # Install & test each wheel
+      # ------------------------
+      - name: Test built wheels
+        run: |
+          python -m pip install wheelhouse/*.whl
+          python test_wheel.py
+
+      # ------------------------
+      # Upload artifacts
+      # ------------------------
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.os }}
+          path: wheelhouse/*.whl
