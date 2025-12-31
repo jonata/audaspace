@@ -80,20 +80,101 @@ jobs:
         env:
           CIBW_BUILD: "cp38-* cp39-* cp310-* cp311-* cp312-*"
           CIBW_SKIP: "*-musllinux_*"
-          CIBW_BUILD_VERBOSITY: "1"
+          
+          # Linux configuration
+          CIBW_BEFORE_ALL_LINUX: >
+            yum install -y epel-release &&
+            yum install -y
+              gcc gcc-c++ make
+              cmake pkgconfig
+              nasm yasm
+              libsndfile-devel
+              openal-soft-devel
+              SDL2-devel
+              fftw-devel
+              jack-audio-connection-kit-devel
+              pulseaudio-libs-devel
+              libX11-devel libXext-devel libXfixes-devel libXrandr-devel &&
+            git clone https://git.ffmpeg.org/ffmpeg.git /tmp/ffmpeg &&
+            cd /tmp/ffmpeg &&
+            ./configure
+              --prefix=/opt/ffmpeg
+              --enable-shared
+              --disable-static
+              --disable-debug
+              --disable-doc
+              --disable-programs
+              --disable-everything
+              --enable-avcodec
+              --enable-avformat
+              --enable-avutil
+              --enable-swresample &&
+            make -j$(nproc) &&
+            make install &&
+            git clone https://github.com/breakfastquay/rubberband.git /tmp/rubberband &&
+            cd /tmp/rubberband &&
+            mkdir build && cd build &&
+            cmake ..
+              -DCMAKE_INSTALL_PREFIX=/opt/rubberband
+              -DBUILD_SHARED_LIBS=ON
+              -DRUBBERBAND_BUILD_PROGRAMS=OFF &&
+            make -j$(nproc) &&
+            make install
 
-          CIBW_BEFORE_ALL_LINUX: |
-            yum install -y epel-release;
-            yum install -y ffmpeg-devel libsndfile-devel fftw-devel SDL2-devel openal-soft-devel;
+          CIBW_ENVIRONMENT_LINUX: >
+            PKG_CONFIG_PATH=/opt/ffmpeg/lib/pkgconfig:/opt/rubberband/lib/pkgconfig
+            LD_LIBRARY_PATH=/opt/ffmpeg/lib:/opt/rubberband/lib
+            WITH_FFMPEG=ON
+            WITH_RUBBERBAND=ON
+            WITH_PULSEAUDIO=ON
+            WITH_JACK=ON
+            WITH_WASAPI=OFF
+            
+          # macOS configuration
+          CIBW_BEFORE_ALL_MACOS: >
+            brew install ffmpeg libsndfile sdl2 fftw rubberband jack || true
+          
+          CIBW_ENVIRONMENT_MACOS: >
+            WITH_COREAUDIO=ON
+            MACOSX_DEPLOYMENT_TARGET=10.15
+            WITH_JACK=ON
+            WITH_WASAPI=OFF
+          
+          # Windows configuration
+          CIBW_BEFORE_BUILD_WINDOWS: >
+            pip install delvewheel
+                    
+          CIBW_BEFORE_ALL_WINDOWS: >
+            choco install -y nasm cmake &&
+            git clone https://github.com/FFTW/fftw3.git C:\fftw &&
+            cd C:\fftw &&
+            cmake -S . -B build
+              -DCMAKE_INSTALL_PREFIX=C:\fftw-install
+              -DBUILD_SHARED_LIBS=ON
+              -DENABLE_FLOAT=ON
+              -DENABLE_DOUBLE=OFF
+              -DENABLE_LONG_DOUBLE=OFF &&
+            cmake --build build --config Release &&
+            cmake --install build &&
+            git clone https://git.ffmpeg.org/ffmpeg.git C:\ffmpeg &&
+            cd C:\ffmpeg &&
+            mkdir build &&
+            cd build &&
+            cmake .. -G "NMake Makefiles"
+              -DCMAKE_INSTALL_PREFIX=C:\ffmpeg-install
+              -DBUILD_SHARED_LIBS=ON
+              -DENABLE_PROGRAMS=OFF
+              -DENABLE_DOC=OFF &&
+            cmake --build . --config Release &&
+            cmake --install .
 
-          WITH_PULSEAUDIO: "ON"
-          WITH_PIPEWIRE: "ON"
-          WITH_JACK: "ON"
-          WITH_COREAUDIO: "ON"
-          WITH_WASAPI: "ON"
-
-          MACOSX_DEPLOYMENT_TARGET: "10.15"
-
+          CIBW_ENVIRONMENT_WINDOWS: >
+            WITH_WASAPI=ON
+            FFTW_DIR=C:\fftw-install
+            FFMPEG_DIR=C:\ffmpeg-install
+            PATH=C:\fftw-install\bin;C:\ffmpeg-install\bin;%PATH%
+            WITH_FFMPEG=ON
+            
         run: |
           python -m cibuildwheel --output-dir wheelhouse
 
