@@ -1,0 +1,113 @@
+[build-system]
+requires = ["scikit-build-core", "pybind11", "numpy", "setuptools"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "audaspace"
+version = "1.8.0"
+description = "Audaspace is a high level audio library written in C++ with Python bindings"
+readme = "README.md"
+requires-python = ">=3.8"
+license = "Apache-2.0"
+authors = [
+    {name = "Jörg Müller", email = "nexyon@gmail.com"}
+]
+keywords = ["audio", "sound", "3d-audio", "signal-processing"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: C++",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Sound/Audio",
+]
+dependencies = ["numpy"]
+
+[project.urls]
+Homepage = "https://github.com/audaspace/audaspace"
+Documentation = "https://audaspace.github.io"
+Repository = "https://github.com/audaspace/audaspace"
+Issues = "https://github.com/audaspace/audaspace/issues"
+
+[tool.scikit-build]
+minimum-version = "0.8"
+build-dir = "build/{wheel_tag}"
+cmake.build-type = "Release"
+wheel.packages = []
+wheel.install-dir = ""
+install.strip = false
+
+[tool.scikit-build.cmake.define]
+BUILD_DEMOS = "OFF"
+SHARED_LIBRARY = "ON"
+WITH_C = "ON"
+WITH_DOCS = "OFF"
+WITH_PYTHON = "ON"
+WITH_PYTHON_MODULE = "ON"
+WITH_BINDING_DOCS = "OFF"
+SEPARATE_C = "OFF"
+
+# Bundle all static dependencies
+WITH_FFMPEG = "ON"
+WITH_LIBSNDFILE = "ON"
+WITH_OPENAL = "ON"
+WITH_SDL = "ON"
+USE_SDL2 = "ON"
+
+# Use plugins as static libraries (bundled)
+PLUGIN_FFMPEG = "OFF"
+PLUGIN_LIBSNDFILE = "OFF"
+PLUGIN_OPENAL = "OFF"
+PLUGIN_SDL = "OFF"
+
+# Platform-specific audio backends
+WITH_PULSEAUDIO = {env = "WITH_PULSEAUDIO", default = "OFF"}
+WITH_PIPEWIRE = {env = "WITH_PIPEWIRE", default = "OFF"}
+WITH_JACK = {env = "WITH_JACK", default = "OFF"}
+WITH_WASAPI = {env = "WITH_WASAPI", default = "OFF"}
+WITH_COREAUDIO = {env = "WITH_COREAUDIO", default = "OFF"}
+
+PLUGIN_PULSEAUDIO = "OFF"
+PLUGIN_PIPEWIRE = "OFF"
+PLUGIN_JACK = "OFF"
+PLUGIN_WASAPI = "OFF"
+PLUGIN_COREAUDIO = "OFF"
+
+# Dynload for platform libraries
+DYNLOAD_JACK = "ON"
+DYNLOAD_PULSEAUDIO = "ON"
+DYNLOAD_PIPEWIRE = "ON"
+
+# Optional features
+WITH_FFTW = "ON"
+WITH_RUBBERBAND = "ON"
+
+[tool.cibuildwheel]
+build = "cp38-* cp39-* cp310-* cp311-* cp312-*"
+skip = "*-musllinux_*"
+
+[tool.cibuildwheel.linux]
+before-all = [
+    "yum install -y epel-release || true",
+    "yum install -y ffmpeg-devel libsndfile-devel openal-soft-devel SDL2-devel fftw-devel || true",
+    "apt-get update || true",
+    "apt-get install -y libavcodec-dev libavformat-dev libavutil-dev libsndfile1-dev libopenal-dev libsdl2-dev libfftw3-dev || true",
+]
+repair-wheel-command = "auditwheel repair -w {dest_dir} {wheel} --lib-sdir . || cp {wheel} {dest_dir}/"
+
+[tool.cibuildwheel.macos]
+before-all = [
+    "brew install ffmpeg libsndfile sdl2 fftw || true",
+]
+repair-wheel-command = "delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel}"
+environment = {WITH_COREAUDIO = "ON", MACOSX_DEPLOYMENT_TARGET = "10.15"}
+
+[tool.cibuildwheel.windows]
+before-build = "pip install delvewheel"
+repair-wheel-command = "delvewheel repair -w {dest_dir} {wheel} || cp {wheel} {dest_dir}/"
+environment = {WITH_WASAPI = "ON"}

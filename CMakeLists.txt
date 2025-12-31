@@ -1248,7 +1248,23 @@ if(WITH_PYTHON)
 		add_custom_target(pythonmodule ALL DEPENDS build SOURCES ${PYTHON_SOURCE_DIRECTORY}/setup.py.in ${PYTHON_SRC} ${PYTHON_HDR})
 		add_dependencies(pythonmodule audaspace)
 
-		install(CODE "EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} setup.py install --root=\$ENV{DESTDIR} --prefix=${CMAKE_INSTALL_PREFIX})")
+		# Install Python module for scikit-build-core compatibility
+		install(CODE "
+			file(GLOB_RECURSE PY_MODULE \"${CMAKE_CURRENT_BINARY_DIR}/build/lib.*/aud*.so\")
+			if(PY_MODULE)
+				list(GET PY_MODULE 0 MODULE_FILE)
+				message(STATUS \"Installing Python module: \${MODULE_FILE}\")
+				
+				# Set RPATH to find libraries in lib/ directory
+				execute_process(COMMAND patchelf --set-rpath \"\\\$ORIGIN/lib\" \"\${MODULE_FILE}\" 
+				                ERROR_QUIET)
+				
+				file(INSTALL \${MODULE_FILE} DESTINATION \"\${CMAKE_INSTALL_PREFIX}\")
+			else()
+				# Fallback to old install method
+				execute_process(COMMAND ${PYTHON_EXECUTABLE} setup.py install --root=\$ENV{DESTDIR} --prefix=${CMAKE_INSTALL_PREFIX})
+			endif()
+		")
 	endif()
 endif()
 
