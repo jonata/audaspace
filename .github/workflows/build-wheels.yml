@@ -82,6 +82,10 @@ jobs:
           CIBW_SKIP: "*-musllinux_*"
           CIBW_BUILD_VERBOSITY: "1"
 
+          CIBW_BEFORE_ALL_LINUX: |
+            yum install -y epel-release;
+            yum install -y ffmpeg-devel libsndfile-devel fftw-devel SDL2-devel openal-soft-devel;
+
           WITH_PULSEAUDIO: "ON"
           WITH_PIPEWIRE: "ON"
           WITH_JACK: "ON"
@@ -154,3 +158,32 @@ jobs:
         with:
           name: wheels-${{ matrix.os }}
           path: wheelhouse/*.whl
+
+  publish:
+    name: Publish to PyPI
+    needs: build_wheels
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Download all wheels
+        uses: actions/download-artifact@v4
+        with:
+          pattern: wheels-*
+          path: dist/
+          merge-multiple: true
+
+      - name: List wheels
+        run: |
+          ls -lh dist/
+          echo "Total wheels: $(ls -1 dist/*.whl | wc -l)"
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
+          skip-existing: true
+          verbose: true
