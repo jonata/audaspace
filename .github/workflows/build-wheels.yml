@@ -39,47 +39,14 @@ jobs:
         run: python -m pip install cibuildwheel build twine numpy
 
       # ------------------------
-      # Linux dependencies
-      # ------------------------
-      - name: Install Linux dependencies
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libavcodec-dev \
-            libavformat-dev \
-            libavutil-dev \
-            libsndfile1-dev \
-            libopenal-dev \
-            libsdl2-dev \
-            libfftw3-dev \
-            pkg-config
-
-      # ------------------------
-      # macOS dependencies
-      # ------------------------
-      - name: Install macOS dependencies
-        if: runner.os == 'macOS'
-        run: |
-          brew update
-          brew install ffmpeg libsndfile sdl2 fftw
-
-      # ------------------------
-      # Windows dependencies
-      # ------------------------
-      - name: Install Windows dependencies
-        if: runner.os == 'Windows'
-        run: |
-          choco install -y ffmpeg
-          python -m pip install delvewheel
-
-      # ------------------------
       # Build wheels
       # ------------------------
       - name: Build wheels with cibuildwheel
         env:
           CIBW_BUILD: "cp38-* cp39-* cp310-* cp311-* cp312-*"
-          CIBW_SKIP: "*-musllinux_*"
+          CIBW_SKIP: >
+            "*-musllinux_*"
+            "cp38-macosx_arm64"
           
           # Linux configuration
           CIBW_BEFORE_ALL_LINUX: >
@@ -89,10 +56,9 @@ jobs:
             ./configure --prefix=/opt/ffmpeg --enable-shared --disable-static --disable-debug --disable-doc --disable-programs --disable-everything --enable-avcodec --enable-avformat --enable-avutil --enable-swresample;
             make -j$(nproc);
             make install;
+            cd /tmp;
             git clone https://github.com/breakfastquay/rubberband.git /tmp/rubberband;
-            cd /tmp/rubberband;
-            mkdir build && cd build;
-            cmake .. -DCMAKE_INSTALL_PREFIX=/opt/rubberband -DBUILD_SHARED_LIBS=ON -DRUBBERBAND_BUILD_PROGRAMS=OFF;
+            cmake -DCMAKE_INSTALL_PREFIX=/opt/rubberband -DBUILD_SHARED_LIBS=ON -DRUBBERBAND_BUILD_PROGRAMS=OFF;
             make -j$(nproc);
             make install;
 
@@ -136,9 +102,9 @@ jobs:
 
           CIBW_ENVIRONMENT_WINDOWS: >
             WITH_WASAPI=ON
-            FFTW_DIR=C:\fftw-install
-            FFMPEG_DIR=C:\ffmpeg-install
-            PATH=C:\fftw-install\bin;C:\ffmpeg-install\bin;%PATH%
+            FFTW_DIR="C:\fftw-install"
+            FFMPEG_DIR="C:\ffmpeg-install"
+            PATH="C:\fftw-install\bin;C:\ffmpeg-install\bin;%PATH%"
             WITH_FFMPEG=ON
 
         run: |
