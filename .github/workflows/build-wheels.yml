@@ -45,8 +45,8 @@ jobs:
         env:
           CIBW_BUILD: "cp38-* cp39-* cp310-* cp311-* cp312-*"
           CIBW_SKIP: >
-            "*-musllinux_*"
-            "cp38-macosx_arm64"
+            *-musllinux_*
+            cp38-macosx_arm64
           
           # Linux configuration
           CIBW_BEFORE_ALL_LINUX: >
@@ -86,7 +86,8 @@ jobs:
             pip install delvewheel;
                     
           CIBW_BEFORE_ALL_WINDOWS: >
-            choco install -y nasm cmake;
+            python -m pip install --upgrade pip &&
+            python -m pip install cmake ninja &&
             git clone https://github.com/FFTW/fftw3.git C:\fftw;
             cd C:\fftw;
             cmake -S . -B build -DCMAKE_INSTALL_PREFIX=C:\fftw-install -DBUILD_SHARED_LIBS=ON -DENABLE_FLOAT=ON -DENABLE_DOUBLE=OFF -DENABLE_LONG_DOUBLE=OFF;
