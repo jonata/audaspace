@@ -40,10 +40,9 @@ build-dir = "build/{wheel_tag}"
 cmake.build-type = "Release"
 wheel.packages = []
 wheel.install-dir = ""
+wheel.exclude = ["include/", "lib/pkgconfig/"]
 install.strip = false
 
-[tool.scikit-build.wheel]
-exclude = ["include/", "lib/pkgconfig/"]
 
 [tool.scikit-build.cmake.define]
 BUILD_DEMOS = "OFF"
