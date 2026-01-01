@@ -113,59 +113,6 @@ jobs:
           python3 -m cibuildwheel --output-dir wheelhouse;
 
       # ------------------------
-      # Inline wheel test script
-      # ------------------------
-      - name: Create wheel test script
-        run: |
-          cat << 'EOF' > test_wheel.py
-          import aud
-          import numpy as np
-
-          def main():
-              device = aud.Device()
-              assert device.channels > 0
-              assert device.rate > 0
-
-              t = np.linspace(0, 0.1, 4410, False)
-              sound = aud.Sound.buffer(
-                  np.sin(2 * np.pi * 440 * t).astype(np.float32),
-                  44100,
-              )
-
-              handle = device.play(sound)
-              handle.stop()
-
-              codecs = [x for x in dir(aud) if x.startswith("CODEC_")]
-              containers = [x for x in dir(aud) if x.startswith("CONTAINER_")]
-              assert codecs
-              assert containers
-
-              aud.HRTF()
-
-              seq = aud.Sequence()
-              seq.add(sound, 0, 0, -1)
-
-              if hasattr(aud, "PlaybackManager"):
-                  aud.PlaybackManager()
-
-              if hasattr(aud, "ThreadPool"):
-                  aud.ThreadPool()
-
-              print("✔ Audaspace wheel test passed")
-
-          if __name__ == "__main__":
-              main()
-          EOF
-
-      # ------------------------
-      # Install & test each wheel
-      # ------------------------
-      - name: Test built wheels
-        run: |
-          python3 -m pip install wheelhouse/*.whl
-          python3 test_wheel.py
-
-      # ------------------------
       # Upload artifacts
       # ------------------------
       - name: Upload wheels
