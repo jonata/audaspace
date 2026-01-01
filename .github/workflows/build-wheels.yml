@@ -101,7 +101,12 @@ jobs:
             pip install delvewheel;
                     
           CIBW_BEFORE_ALL_WINDOWS: |
-            choco install -y ffmpeg pkgconfiglite openal libsndfile || true;
+            choco install -y ninja meson pkgconfiglite openal libsndfile &&
+            git clone https://github.com/breakfastquay/rubberband.git C:/rubberband &&
+            cd C:/rubberband &&
+            meson setup build --prefix=\$PREFIX --libdir=lib &&
+            ninja -C build &&
+            ninja -C build install
 
           CIBW_ENVIRONMENT_WINDOWS: >
             WITH_WASAPI=ON
