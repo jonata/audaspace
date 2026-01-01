@@ -59,7 +59,7 @@ jobs:
             python3 -m pip install meson ninja;
             git clone https://github.com/breakfastquay/rubberband.git /tmp/rubberband;
             cd /tmp/rubberband;
-            meson setup build --prefix=/opt/rubberband -Dresampler=libsamplerate -Dtests=false -Dfft=fftw;
+            meson setup build --prefix=/opt/rubberband -Dresampler=libsamplerate -Dtests=disabled -Dfft=fftw;
             ninja -C build;
             ninja -C build install;
 
@@ -99,8 +99,8 @@ jobs:
             pip install delvewheel;
                     
           CIBW_BEFORE_ALL_WINDOWS: >
-            python3 -m pip install --upgrade pip;
-            python3 -m pip install cmake ninja menson;
+            python -m pip install --upgrade pip;
+            python -m pip install cmake ninja menson;
             git clone https://github.com/FFTW/fftw3.git C:\fftw;
             cd C:\fftw;
             cmake -S . -B build -DCMAKE_INSTALL_PREFIX=C:\fftw-install -DBUILD_SHARED_LIBS=ON -DENABLE_FLOAT=ON -DENABLE_DOUBLE=OFF -DENABLE_LONG_DOUBLE=OFF;
