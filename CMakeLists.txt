@@ -1259,7 +1259,7 @@ if(WITH_PYTHON)
 		# Install Python module for scikit-build-core compatibility
 		install(CODE "
 			execute_process(COMMAND ${CMAKE_COMMAND} --build ${CMAKE_CURRENT_BINARY_DIR} --target pythonmodule)
-			file(GLOB_RECURSE AUD_FILES \"${CMAKE_CURRENT_BINARY_DIR}/*aud*.so\")
+			file(GLOB AUD_FILES \"${CMAKE_CURRENT_BINARY_DIR}/build/lib*/*aud*.so\")
 			foreach(AUD_FILE \${AUD_FILES})
 				file(COPY \${AUD_FILE} DESTINATION ${CMAKE_INSTALL_PREFIX}/)
 			endforeach()

@@ -102,7 +102,7 @@ jobs:
                     
           CIBW_BEFORE_ALL_WINDOWS: |
             choco install -y pkgconfiglite openal libsndfile &&
-            git clone https://github.com/breakfastquay/rubberband.git C:\rubberband %%
+            git clone https://github.com/breakfastquay/rubberband.git C:\rubberband &&
             cd C:\rubberband &&
             meson setup build --libdir=lib &&
             ninja -C build &&
