@@ -137,21 +137,21 @@ jobs:
             ninja -C build
             ninja -C build install
 
-          CIBW_ENVIRONMENT_WINDOWS: |
-            WITH_WASAPI=ON
-            WITH_FFMPEG=ON
-            WITH_LIBSNDFILE=ON
-            WITH_OPENAL=ON
-            WITH_SDL=ON
-            WITH_JACK=ON
-            FFTW_DIR=C:\fftw-install
-            FFMPEG_DIR=C:\ffmpeg-install
-            LIBSNDFILE_DIR=C:\libsndfile-install
-            OPENALDIR=C:\openal-install
-            SDL2=C:\sdl-install
-            JACK_DIR=C:\jack-install
-            CMAKE_PREFIX_PATH=C:\fftw-install;C:\ffmpeg-install;C:\libsndfile-install;C:\openal-install;C:\sdl-install;C:\jack-install
-            PATH=C:\fftw-install\bin;C:\ffmpeg-install\bin;C:\libsndfile-install\bin;C:\openal-install\bin;C:\sdl-install\bin;C:\jack-install\bin;%PATH%
+          CIBW_ENVIRONMENT_WINDOWS: >
+            WITH_WASAPI="ON"
+            WITH_FFMPEG="ON"
+            WITH_LIBSNDFILE="ON"
+            WITH_OPENAL="ON"
+            WITH_SDL="ON"
+            WITH_JACK="ON"
+            FFTW_DIR="C:\\fftw-install"
+            FFMPEG_DIR="C:\\ffmpeg-install"
+            LIBSNDFILE_DIR="C:\\libsndfile-install"
+            OPENALDIR="C:\\openal-install"
+            SDL2="C:\\sdl-install"
+            JACK_DIR="C:\\jack-install"
+            CMAKE_PREFIX_PATH="C:\\fftw-install;C:\\ffmpeg-install;C:\\libsndfile-install;C:\\openal-install;C:\\sdl-install;C:\\jack-install"
+            PATH="C:\\fftw-install\\bin;C:\\ffmpeg-install\\bin;C:\\libsndfile-install\\bin;C:\\openal-install\\bin;C:\\sdl-install\\bin;C:\\jack-install\\bin;$PATH"
 
         run: |
           python3 -m cibuildwheel --output-dir wheelhouse;
