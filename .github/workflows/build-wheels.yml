@@ -53,7 +53,7 @@ jobs:
           
           # Linux configuration
           CIBW_BEFORE_ALL_LINUX: >
-            yum install -y epel-release && yum install -y gcc gcc-c++ make cmake pkgconfig nasm yasm libsndfile-devel openal-soft-devel SDL2-devel fftw-devel jack-audio-connection-kit-devel pulseaudio-libs-devel libX11-devel libXext-devel libXfixes-devel libXrandr-devel libXcursor-devel libXinerama-devel mesa-libEGL-devel mesa-libGL-devel libsamplerate-devel pipewire-devel libpipewire-0.3-devel pipewire-jack-audio-connection-kit-devel;
+            yum install -y epel-release && yum install -y gcc gcc-c++ make cmake pkgconfig nasm yasm libsndfile-devel openal-soft-devel SDL2-devel fftw-devel jack-audio-connection-kit-devel pulseaudio-libs-devel libX11-devel libXext-devel libXfixes-devel libXrandr-devel libXcursor-devel libXinerama-devel mesa-libEGL-devel mesa-libGL-devel libsamplerate-devel pipewire-devel libpipewire-0.3-devel pipewire-jack-audio-connection-kit-devel fftw-devel-single;
             git clone https://git.ffmpeg.org/ffmpeg.git /tmp/ffmpeg;
             cd /tmp/ffmpeg;
             ./configure --prefix=/opt/ffmpeg --enable-shared --disable-static --disable-debug --disable-doc --disable-programs --disable-everything --enable-avcodec --enable-avformat --enable-avutil --enable-swresample;
@@ -153,6 +153,7 @@ jobs:
             WITH_WASAPI=ON
             WITH_STRICT_DEPENDENCIES=ON
             LIBRARY_PATH=C:\lib
+            PKG_CONFIG_PATH=C:\lib
 
           CIBW_TEST_REQUIRES: numpy
           CIBW_TEST_COMMAND: >
