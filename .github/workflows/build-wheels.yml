@@ -100,7 +100,7 @@ jobs:
           CIBW_BEFORE_BUILD_WINDOWS: >
             pip install delvewheel;
                     
-          CIBW_BEFORE_ALL_WINDOWS: |
+          CIBW_BEFORE_ALL_WINDOWS: >
             python -m pip install --upgrade pip;
             python -m pip install cmake ninja meson;
             git clone https://github.com/FFTW/fftw3.git C:\fftw;
