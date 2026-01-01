@@ -100,42 +100,75 @@ jobs:
           CIBW_BEFORE_BUILD_WINDOWS: >
             pip install delvewheel;
                     
-          CIBW_BEFORE_ALL_WINDOWS: |
-            python -m pip install --upgrade pip &&
-            python -m pip install cmake ninja meson &&
-            git clone https://github.com/FFTW/fftw3.git C:\fftw &&
-            cd C:\fftw &&
-            cmake -S . -B build -DCMAKE_INSTALL_PREFIX=C:\fftw-install -DBUILD_SHARED_LIBS=ON -DENABLE_FLOAT=ON -DENABLE_DOUBLE=OFF -DENABLE_LONG_DOUBLE=OFF &&
-            cmake --build build --config Release &&
-            cmake --install build &&
-            git clone https://git.ffmpeg.org/ffmpeg.git C:\ffmpeg &&
-            cd C:\ffmpeg &&
-            mkdir build &&
-            cd build &&
-            cmake .. -DCMAKE_INSTALL_PREFIX=C:\ffmpeg-install -DBUILD_SHARED_LIBS=ON -DENABLE_PROGRAMS=OFF -DENABLE_DOC=OFF &&
-            cmake --build . --config Release &&
-            cmake --install . &&
-            git clone https://github.com/libsndfile/libsndfile.git C:\libsndfile &&
-            cd C:\libsndfile &&
-            cmake -S . -B build -DCMAKE_INSTALL_PREFIX=C:\libsndfile-install -DBUILD_SHARED_LIBS=ON &&
-            cmake --build build --config Release &&
-            cmake --install build &&
-            git clone https://github.com/kcat/openal-soft.git C:\openal &&
-            cd C:\openal &&
-            cmake -S . -B build -DCMAKE_INSTALL_PREFIX=C:\openal-install -DLIBTYPE=SHARED &&
-            cmake --build build --config Release &&
-            cmake --install build &&
-            git clone https://github.com/libsdl-org/SDL.git C:\sdl &&
-            cd C:\sdl &&
-            cmake -S . -B build -DCMAKE_INSTALL_PREFIX=C:\sdl-install -DBUILD_SHARED_LIBS=ON &&
-            cmake --build build --config Release &&
-            cmake --install build &&
-            git clone https://github.com/jackaudio/jack2.git C:\jack &&
-            cd C:\jack &&
-            git submodule update --init --recursive &&
-            meson setup build --prefix=C:\jack-install -Ddocs=disabled -Dtests=disabled &&
-            ninja -C build &&
-            ninja -C build install &&
+          CIBW_BEFORE_ALL_WINDOWS: >
+            python -m pip install --upgrade pip;
+
+            python -m pip install cmake ninja meson;
+
+            git clone https://github.com/FFTW/fftw3.git C:\fftw;
+
+            cd C:\fftw;
+
+            cmake -S . -B build -DCMAKE_INSTALL_PREFIX=C:\fftw-install -DBUILD_SHARED_LIBS=ON -DENABLE_FLOAT=ON -DENABLE_DOUBLE=OFF -DENABLE_LONG_DOUBLE=OFF;
+
+            cmake --build build --config Release;
+
+            cmake --install build;
+
+            git clone https://git.ffmpeg.org/ffmpeg.git C:\ffmpeg;
+            
+            cd C:\ffmpeg;
+            
+            mkdir build;
+            
+            cd build;
+            
+            cmake .. -DCMAKE_INSTALL_PREFIX=C:\ffmpeg-install -DBUILD_SHARED_LIBS=ON -DENABLE_PROGRAMS=OFF -DENABLE_DOC=OFF;
+            
+            cmake --build . --config Release;
+            
+            cmake --install .;
+            
+            git clone https://github.com/libsndfile/libsndfile.git C:\libsndfile;
+            
+            cd C:\libsndfile;
+            
+            cmake -S . -B build -DCMAKE_INSTALL_PREFIX=C:\libsndfile-install -DBUILD_SHARED_LIBS=ON;
+            
+            cmake --build build --config Release;
+            
+            cmake --install build;
+            
+            git clone https://github.com/kcat/openal-soft.git C:\openal;
+            
+            cd C:\openal;
+            
+            cmake -S . -B build -DCMAKE_INSTALL_PREFIX=C:\openal-install -DLIBTYPE=SHARED;
+            
+            cmake --build build --config Release;
+            cmake --install build;
+            
+            git clone https://github.com/libsdl-org/SDL.git C:\sdl;
+            
+            cd C:\sdl;
+            
+            cmake -S . -B build -DCMAKE_INSTALL_PREFIX=C:\sdl-install -DBUILD_SHARED_LIBS=ON;
+            
+            cmake --build build --config Release;
+            
+            cmake --install build;
+            
+            git clone https://github.com/jackaudio/jack2.git C:\jack;
+            
+            cd C:\jack;
+            
+            git submodule update --init --recursive;
+            
+            meson setup build --prefix=C:\jack-install -Ddocs=disabled -Dtests=disabled;
+            
+            ninja -C build;
+            
+            ninja -C build install;
 
           CIBW_ENVIRONMENT_WINDOWS: >
             WITH_WASAPI=ON
