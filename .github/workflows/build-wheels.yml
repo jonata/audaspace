@@ -50,7 +50,7 @@ jobs:
           
           # Linux configuration
           CIBW_BEFORE_ALL_LINUX: >
-            yum install -y epel-release && yum install -y gcc gcc-c++ make cmake pkgconfig nasm yasm libsndfile-devel openal-soft-devel SDL2-devel fftw-devel jack-audio-connection-kit-devel pulseaudio-libs-devel libX11-devel libXext-devel libXfixes-devel libXrandr-devel;
+            yum install -y epel-release && yum install -y gcc gcc-c++ make cmake pkgconfig nasm yasm libsndfile-devel openal-soft-devel SDL2-devel fftw-devel jack-audio-connection-kit-devel pulseaudio-libs-devel libX11-devel libXext-devel libXfixes-devel libXrandr-devel libXcursor-devel libXinerama-devel mesa-libEGL-devel mesa-libGL-devel;
             git clone https://git.ffmpeg.org/ffmpeg.git /tmp/ffmpeg;
             cd /tmp/ffmpeg;
             ./configure --prefix=/opt/ffmpeg --enable-shared --disable-static --disable-debug --disable-doc --disable-programs --disable-everything --enable-avcodec --enable-avformat --enable-avutil --enable-swresample;
@@ -80,15 +80,25 @@ jobs:
             MACOSX_DEPLOYMENT_TARGET=11.0
             WITH_JACK=ON
             WITH_WASAPI=OFF
-            DYLD_LIBRARY_PATH=/opt/homebrew/lib:/opt/homebrew/opt/ffmpeg/lib
+
+          CIBW_CMAKE_ARGS_MACOS: >
+            -DCMAKE_INSTALL_RPATH=@loader_path
+            -DCMAKE_INSTALL_NAME_DIR=@rpath
+            -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON
+            -DCMAKE_INSTALL_LIBDIR=lib
+
+          CIBW_BEFORE_BUILD_MACOS: >
+            cmake --install build;
+            mkdir -p audaspace/lib;
+            cp install/lib/libaudaspace*.dylib audaspace/lib/;
           
           # Windows configuration
           CIBW_BEFORE_BUILD_WINDOWS: >
             pip install delvewheel;
                     
           CIBW_BEFORE_ALL_WINDOWS: >
-            python3 -m pip install --upgrade pip &&
-            python3 -m pip install cmake ninja &&
+            py -m pip install --upgrade pip &&
+            py -m pip install cmake ninja &&
             git clone https://github.com/FFTW/fftw3.git C:\fftw;
             cd C:\fftw;
             cmake -S . -B build -DCMAKE_INSTALL_PREFIX=C:\fftw-install -DBUILD_SHARED_LIBS=ON -DENABLE_FLOAT=ON -DENABLE_DOUBLE=OFF -DENABLE_LONG_DOUBLE=OFF;
