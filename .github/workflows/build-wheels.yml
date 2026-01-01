@@ -144,8 +144,6 @@ jobs:
             WITH_SDL=OFF
             WITH_JACK=OFF
             WITH_FFTW=OFF
-            CMAKE_PREFIX_PATH="C:\ProgramData\chocolatey\lib\ffmpeg;C:\fftw-install;C:\ffmpeg-install;C:\libsndfile-install;C:\openal-install;C:\sdl-install;C:\jack-install"
-            
   
           CIBW_TEST_REQUIRES: numpy
           CIBW_TEST_COMMAND: >
