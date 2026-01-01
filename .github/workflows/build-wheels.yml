@@ -32,19 +32,6 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Setup msys2
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: MINGW64
-          update: true
-          install: >
-            base-devel
-            mingw-w64-x86_64-toolchain
-            mingw-w64-x86_64-python
-            mingw-w64-x86_64-pkg-config
-            git
-
-
       - name: Upgrade pip
         run: python3 -m pip install --upgrade pip
 
@@ -121,15 +108,7 @@ jobs:
             cd rubberband &&
             meson setup build --libdir=lib &&
             ninja -C build &&
-            ninja -C build install &&
-            cd .. &&
-            git clone https://github.com/jackaudio/jack2.git &&
-            cd jack2 &&
-            git submodule update --init --recursive &&
-            python ./waf configure --prefix=/mingw64 --classic --dbus &&
-            python ./waf build &&
-            python ./waf install --destdir=$PWD/install &&
-            cd ..
+            ninja -C build install
 
           CIBW_ENVIRONMENT_WINDOWS: >
             WITH_WASAPI=ON
