@@ -110,6 +110,7 @@ jobs:
             WITH_OPENAL=ON
             WITH_SDL=ON
             WITH_JACK=ON
+            WITH_STRICT_DEPENDENCIES=ON
             FFTW_DIR="C:\fftw-install"
             FFMPEG_DIR="C:\ffmpeg-install"
             LIBSNDFILE_DIR="C:\libsndfile-install"
@@ -117,6 +118,8 @@ jobs:
             OPENAL_INCLUDE_DIR="C:\openal-install"
             SDL2="C:\sdl-install"
             JACK_DIR="C:\jack-install"
+            CMAKE_INSTALL_PREFIX="C:\audaspace"
+            LIBRARY_PATH="C:\ProgramData\chocolatey\lib\ffmpeg;C:\fftw-install;C:\ffmpeg-install;C:\libsndfile-install;C:\openal-install;C:\sdl-install;C:\jack-install"
             CMAKE_PREFIX_PATH="C:\ProgramData\chocolatey\lib\ffmpeg;C:\fftw-install;C:\ffmpeg-install;C:\libsndfile-install;C:\openal-install;C:\sdl-install;C:\jack-install"
             PATH="C:\fftw-install\bin;C:\ffmpeg-install\bin;C:\libsndfile-install\bin;C:\openal-install\bin;C:\sdl-install\bin;C:\jack-install\bin;$PATH"
 
