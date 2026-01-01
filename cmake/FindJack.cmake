@@ -15,14 +15,14 @@ endif(PKG_CONFIG_FOUND)
 find_path(JACK_INCLUDE_DIR
 	NAMES jack/jack.h
 	PATH_SUFFIXES include includes
-	PATHS ${JACK_PKGCONF_INCLUDE_DIRS} ${JACK_DIR}/include
+	PATHS ${JACK_PKGCONF_INCLUDE_DIRS}
 )
 
 # Library
 find_library(JACK_LIBRARY
 	NAMES jack jack64 libjack libjack64
 	PATH_SUFFIXES lib
-	PATHS ${JACK_PKGCONF_LIBRARY_DIRS} ${JACK_DIR}/lib
+	PATHS ${JACK_PKGCONF_LIBRARY_DIRS}
 )
 
 find_package(PackageHandleStandardArgs)

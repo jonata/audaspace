@@ -14,13 +14,13 @@ endif(PKG_CONFIG_FOUND)
 # Include dir
 find_path(FFTW_INCLUDE_DIR
 	NAMES fftw3.h
-	PATHS ${FFTW_PKGCONF_INCLUDE_DIRS} ${FFTW_DIR}/include
+	PATHS ${FFTW_PKGCONF_INCLUDE_DIRS}
 )
 
 # Library
 find_library(FFTW_LIBRARY
 	NAMES libfftw3f-3 fftw3f fftw
-	PATHS ${FFTW_PKGCONF_LIBRARY_DIRS} ${FFTW_DIR}/lib
+	PATHS ${FFTW_PKGCONF_LIBRARY_DIRS}
 )
 
 find_package(PackageHandleStandardArgs)
