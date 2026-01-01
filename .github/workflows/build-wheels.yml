@@ -101,12 +101,20 @@ jobs:
             pip install delvewheel;
                     
           CIBW_BEFORE_ALL_WINDOWS: >
+            python -m pip install --upgrade pip
+            python -m pip install cmake ninja meson
             choco install -y pkgconfiglite openal libsndfile &&
             git clone https://github.com/breakfastquay/rubberband.git C:\rubberband &&
             cd C:\rubberband &&
             meson setup build --libdir=lib &&
             ninja -C build &&
-            ninja -C build install
+            ninja -C build install &&
+            git clone https://github.com/jackaudio/jack2.git C:\jack &&
+            cd C:\jack &&
+            git submodule update --init --recursive &&
+            python -m meson setup build --prefix=C:\jack-install -Ddocs=disabled -Dtests=disabled &&
+            python -m ninja -C build &&
+            python -m ninja -C build install
 
           CIBW_ENVIRONMENT_WINDOWS: >
             WITH_WASAPI=ON

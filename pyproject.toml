@@ -1,5 +1,5 @@
 [build-system]
-requires = ["scikit-build-core", "pybind11", "numpy", "setuptools"]
+requires = ["scikit-build-core", "pybind11", "numpy", "setuptools", "build", "pybind11"]
 build-backend = "scikit_build_core.build"
 
 [project]
