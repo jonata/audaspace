@@ -56,11 +56,12 @@ jobs:
             ./configure --prefix=/opt/ffmpeg --enable-shared --disable-static --disable-debug --disable-doc --disable-programs --disable-everything --enable-avcodec --enable-avformat --enable-avutil --enable-swresample;
             make -j$(nproc);
             make install;
+            python3 -m pip install meson ninja;
             git clone https://github.com/breakfastquay/rubberband.git /tmp/rubberband;
             cd /tmp/rubberband;
-            cmake -DCMAKE_INSTALL_PREFIX=/opt/rubberband -DBUILD_SHARED_LIBS=ON -DRUBBERBAND_BUILD_PROGRAMS=OFF;
-            make -j$(nproc);
-            make install;
+            meson setup build --prefix=/opt/rubberband -Dresampler=libsamplerate -Dtests=false -Dfft=fftw;
+            ninja -C build;
+            ninja -C build install;
 
           CIBW_ENVIRONMENT_LINUX: >
             PKG_CONFIG_PATH=/opt/ffmpeg/lib/pkgconfig:/opt/rubberband/lib/pkgconfig
@@ -88,17 +89,18 @@ jobs:
             -DCMAKE_INSTALL_LIBDIR=lib
 
           CIBW_BEFORE_BUILD_MACOS: >
-            cmake --install build;
+            python -m pip install delocate;
+            find . -name "libaudaspace*.dylib" -type f;
             mkdir -p audaspace/lib;
-            cp install/lib/libaudaspace*.dylib audaspace/lib/;
+            find . -name "libaudaspace*.dylib" -type f -exec cp {} audaspace/lib/ \;
           
           # Windows configuration
           CIBW_BEFORE_BUILD_WINDOWS: >
             pip install delvewheel;
                     
           CIBW_BEFORE_ALL_WINDOWS: >
-            python3 -m pip install --upgrade pip &&
-            python3 -m pip install cmake ninja &&
+            python3 -m pip install --upgrade pip;
+            python3 -m pip install cmake ninja menson;
             git clone https://github.com/FFTW/fftw3.git C:\fftw;
             cd C:\fftw;
             cmake -S . -B build -DCMAKE_INSTALL_PREFIX=C:\fftw-install -DBUILD_SHARED_LIBS=ON -DENABLE_FLOAT=ON -DENABLE_DOUBLE=OFF -DENABLE_LONG_DOUBLE=OFF;
