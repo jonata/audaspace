@@ -101,8 +101,8 @@ jobs:
             pip install delvewheel;
                     
           CIBW_BEFORE_ALL_WINDOWS: >
-            python -m pip install --upgrade pip
-            python -m pip install cmake ninja meson
+            python -m pip install --upgrade pip &&
+            python -m pip install cmake ninja meson &&
             choco install -y pkgconfiglite openal libsndfile &&
             git clone https://github.com/breakfastquay/rubberband.git C:\rubberband &&
             cd C:\rubberband &&
