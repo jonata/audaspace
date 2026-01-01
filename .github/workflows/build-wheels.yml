@@ -100,9 +100,8 @@ jobs:
           CIBW_BEFORE_BUILD_WINDOWS: >
             pip install delvewheel;
                     
-          CIBW_BEFORE_ALL_WINDOWS: >
-            choco install -y ffmpeg pkgconfiglite openal jack libsndfile
-
+          CIBW_BEFORE_ALL_WINDOWS: |
+            choco install -y ffmpeg pkgconfiglite openal jack libsndfile || true;
 
           CIBW_ENVIRONMENT_WINDOWS: >
             WITH_WASAPI=ON
