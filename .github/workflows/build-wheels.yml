@@ -71,6 +71,8 @@ jobs:
             WITH_PULSEAUDIO=ON
             WITH_JACK=ON
             WITH_WASAPI=OFF
+
+          CIBW_REPAIR_WHEEL_COMMAND_LINUX: auditwheel repair -w {dest_dir} {wheel} --lib-sdir . || cp {wheel} {dest_dir}/
             
           # macOS configuration
           CIBW_BEFORE_ALL_MACOS: >
@@ -117,7 +119,7 @@ jobs:
             WITH_OPENAL=ON
             WITH_SDL=ON
             WITH_JACK=ON
-            WITH_FFTW=ON
+            WITH_FFTW=OFF
             WITH_STRICT_DEPENDENCIES=ON
             FFTW_DIR="C:\fftw-install"
             FFMPEG_DIR="C:\ffmpeg-install"
