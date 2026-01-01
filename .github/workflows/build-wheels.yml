@@ -139,7 +139,7 @@ jobs:
 
           CIBW_ENVIRONMENT_WINDOWS: >
             WITH_WASAPI=ON
-            WITH_FFMPEG=ON
+            WITH_FFMPEG=ON 
             WITH_LIBSNDFILE=ON
             WITH_OPENAL=ON
             WITH_SDL=ON
