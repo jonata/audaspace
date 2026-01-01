@@ -964,6 +964,10 @@ add_library(audaspace ${LIBRARY_TYPE} ${SRC} ${HDR})
 target_link_libraries(audaspace ${LIBRARIES})
 set_target_properties(audaspace PROPERTIES SOVERSION ${AUDASPACE_VERSION})
 
+if(APPLE)
+	set_target_properties(audaspace PROPERTIES INSTALL_NAME_DIR "@rpath")
+endif()
+
 if(AUDASPACE_STANDALONE)
 	install(TARGETS audaspace
 		RUNTIME DESTINATION ${BIN_DESTINATION}
@@ -1223,6 +1227,10 @@ if(WITH_PYTHON)
 	target_link_libraries(audaspace-py audaspace ${PYTHON_LIBRARIES})
 	set_target_properties(audaspace-py PROPERTIES SOVERSION ${AUDASPACE_VERSION})
 
+	if(APPLE)
+		set_target_properties(audaspace-py PROPERTIES INSTALL_NAME_DIR "@rpath")
+	endif()
+
 	if(AUDASPACE_STANDALONE)
 		install(TARGETS audaspace-py
 			RUNTIME DESTINATION ${BIN_DESTINATION}
@@ -1256,8 +1264,12 @@ if(WITH_PYTHON)
 				message(STATUS \"Installing Python module: \${MODULE_FILE}\")
 				
 				# Set RPATH to find libraries in lib/ directory
-				execute_process(COMMAND patchelf --set-rpath \"\\\$ORIGIN/lib\" \"\${MODULE_FILE}\" 
-				                ERROR_QUIET)
+				if(APPLE)
+					execute_process(COMMAND install_name_tool -add_rpath @loader_path/lib \${MODULE_FILE})
+				elseif(UNIX)
+					execute_process(COMMAND patchelf --set-rpath \"\\\$ORIGIN/lib\" \"\${MODULE_FILE}\" 
+					                ERROR_QUIET)
+				endif()
 				
 				file(INSTALL \${MODULE_FILE} DESTINATION \"\${CMAKE_INSTALL_PREFIX}\")
 			else()
