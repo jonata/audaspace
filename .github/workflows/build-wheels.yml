@@ -78,7 +78,7 @@ jobs:
           
           CIBW_ENVIRONMENT_MACOS: >
             WITH_COREAUDIO=ON
-            MACOSX_DEPLOYMENT_TARGET=11.0
+            MACOSX_DEPLOYMENT_TARGET=15.0
             CMAKE_INSTALL_RPATH=@loader_path
             CMAKE_BUILD_WITH_INSTALL_RPATH=ON
             WITH_JACK=ON
@@ -150,6 +150,7 @@ jobs:
             OPENAL_DIR=C:\openal-install
             SDL2_DIR=C:\sdl-install
             JACK_DIR=C:\jack-install
+            CMAKE_PREFIX_PATH=C:\fftw-install;C:\ffmpeg-install;C:\libsndfile-install;C:\openal-install;C:\sdl-install;C:\jack-install
             PATH=C:\fftw-install\bin;C:\ffmpeg-install\bin;C:\libsndfile-install\bin;C:\openal-install\bin;C:\sdl-install\bin;C:\jack-install\bin;%PATH%
 
         run: |
