@@ -45,6 +45,7 @@ jobs:
         env:
           CIBW_BUILD: "cp38-* cp39-* cp310-* cp311-* cp312-*"
           CIBW_BUILD_VERBOSITY: 1
+          CIBW_BUILD_FRONTEND: build
           CIBW_SKIP: >
             *-musllinux_*
             cp38-macosx_arm64
@@ -64,10 +65,19 @@ jobs:
             ninja -C build;
             ninja -C build install;
 
+          CIBW_BEFORE_BUILD_LINUX: >
+            python -m pip install --upgrade pip setuptools scikit-build-core numpy pybind11 cmake ninja;
+            ls -la;
+            pwd;
+            python -m pip list | grep -i audit || true;
+            python -m pip install auditwheel;
+
           CIBW_ENVIRONMENT_LINUX: >
             PKG_CONFIG_PATH=/opt/ffmpeg/lib/pkgconfig:/opt/rubberband/lib/pkgconfig
             LD_LIBRARY_PATH=/opt/ffmpeg/lib:/opt/rubberband/lib
             CMAKE_PREFIX_PATH=/opt/ffmpeg:/opt/rubberband
+            CMAKE_BUILD_WITH_INSTALL_RPATH=ON
+            CMAKE_INSTALL_RPATH=/opt/ffmpeg/lib:/opt/rubberband/lib
             WITH_FFMPEG=ON
             WITH_RUBBERBAND=ON
             WITH_PULSEAUDIO=ON
@@ -77,8 +87,14 @@ jobs:
             VERBOSE=1
 
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: >
-            auditwheel show {wheel} || true;
-            auditwheel repair -w {dest_dir} {wheel} || cp {wheel} {dest_dir}/
+            echo "=== Before repair ===" &&
+            unzip -l {wheel} | head -20 || true &&
+            auditwheel show {wheel} || true &&
+            echo "=== Running repair ===" &&
+            LD_LIBRARY_PATH=/opt/ffmpeg/lib:/opt/rubberband/lib:$LD_LIBRARY_PATH auditwheel repair -w {dest_dir} {wheel} -L /opt/ffmpeg/lib -L /opt/rubberband/lib || (echo "Repair failed, copying wheel as-is" && cp {wheel} {dest_dir}/) &&
+            echo "=== After repair ===" &&
+            ls -lh {dest_dir}/*.whl &&
+            unzip -l {dest_dir}/*.whl | grep -E '\.so|\.pyd|__init__' | head -20 || true
             
           # macOS configuration
           CIBW_BEFORE_ALL_MACOS: >
@@ -131,6 +147,7 @@ jobs:
   
           CIBW_TEST_REQUIRES: numpy
           CIBW_TEST_COMMAND: >
+            python -c "import sys; print('Python:', sys.executable); import site; print('Site packages:', site.getsitepackages()); import os; print('PYTHONPATH:', os.environ.get('PYTHONPATH', 'not set')); print('sys.path:'); [print('  ', p) for p in sys.path]" &&
             python -c "import aud,numpy as np; d=aud.Device(); t=np.linspace(0,0.1,4410,False); s=aud.Sound.buffer(np.sin(2*np.pi*440*t).astype(np.float32),44100); h=d.play(s); h.stop(); aud.HRTF(); seq=aud.Sequence(); seq.add(s,0,0,-1); assert any(n.startswith('CODEC_') for n in dir(aud)); print('audaspace wheel OK')"
 
 
