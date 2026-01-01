@@ -41,7 +41,6 @@ cmake.build-type = "Release"
 wheel.packages = []
 wheel.install-dir = ""
 install.strip = false
-cmake.version = "3.15"
 
 [tool.scikit-build.cmake.define]
 BUILD_DEMOS = "OFF"
