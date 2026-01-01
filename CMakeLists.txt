@@ -1272,6 +1272,14 @@ if(WITH_PYTHON)
 				endif()
 				
 				file(INSTALL \${MODULE_FILE} DESTINATION \"\${CMAKE_INSTALL_PREFIX}\")
+				
+				# Set RPATH for libraries on macOS
+				if(APPLE)
+					file(GLOB LIB_FILES \"\${CMAKE_INSTALL_PREFIX}/lib/libaudaspace*.dylib\")
+					foreach(LIB_FILE \${LIB_FILES})
+						execute_process(COMMAND install_name_tool -add_rpath @loader_path \${LIB_FILE})
+					endforeach()
+				endif()
 			else()
 				# Fallback to old install method
 				execute_process(COMMAND ${PYTHON_EXECUTABLE} setup.py install --root=\$ENV{DESTDIR} --prefix=${CMAKE_INSTALL_PREFIX})

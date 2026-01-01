@@ -139,6 +139,11 @@ jobs:
 
           CIBW_ENVIRONMENT_WINDOWS: |
             WITH_WASAPI=ON
+            WITH_FFMPEG=ON
+            WITH_LIBSNDFILE=ON
+            WITH_OPENAL=ON
+            WITH_SDL=ON
+            WITH_JACK=ON
             FFTW_DIR=C:\fftw-install
             FFMPEG_DIR=C:\ffmpeg-install
             LIBSNDFILE_DIR=C:\libsndfile-install
@@ -146,11 +151,6 @@ jobs:
             SDL2_DIR=C:\sdl-install
             JACK_DIR=C:\jack-install
             PATH=C:\fftw-install\bin;C:\ffmpeg-install\bin;C:\libsndfile-install\bin;C:\openal-install\bin;C:\sdl-install\bin;C:\jack-install\bin;%PATH%
-            WITH_FFMPEG=ON
-            WITH_LIBSNDFILE=ON
-            WITH_OPENAL=ON
-            WITH_SDL=ON
-            WITH_JACK=ON
 
         run: |
           python3 -m cibuildwheel --output-dir wheelhouse;

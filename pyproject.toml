@@ -110,4 +110,4 @@ environment = {WITH_COREAUDIO = "ON", MACOSX_DEPLOYMENT_TARGET = "11.0"}
 [tool.cibuildwheel.windows]
 before-build = "pip install delvewheel"
 repair-wheel-command = "delvewheel repair -w {dest_dir} {wheel} || cp {wheel} {dest_dir}/"
-environment = {WITH_WASAPI = "ON"}
+environment = {WITH_WASAPI = "ON", WITH_FFMPEG="ON", WITH_LIBSNDFILE="ON", WITH_OPENAL="ON", WITH_SDL="ON", WITH_JACK="ON"}
