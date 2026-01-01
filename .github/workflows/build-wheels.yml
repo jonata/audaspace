@@ -101,14 +101,12 @@ jobs:
             pip install delvewheel;
                     
           CIBW_BEFORE_ALL_WINDOWS: |
-            powershell -Command "
-              choco install -y ninja meson pkgconfiglite openal libsndfile;
-              git clone https://github.com/breakfastquay/rubberband.git C:\rubberband;
-              cd C:\rubberband;
-              meson setup build --libdir=lib;
-              ninja -C build;
-              ninja -C build install
-            "
+            choco install -y ninja meson pkgconfiglite openal libsndfile;
+            git clone https://github.com/breakfastquay/rubberband.git C:\rubberband;
+            cd C:\rubberband;
+            meson setup build --libdir=lib;
+            ninja -C build;
+            ninja -C build install
 
           CIBW_ENVIRONMENT_WINDOWS: >
             WITH_WASAPI=ON
@@ -132,17 +130,8 @@ jobs:
   
           CIBW_TEST_REQUIRES: numpy
           CIBW_TEST_COMMAND: >
-            python - <<'EOF'
-            import aud, numpy as np
-            d = aud.Device()
-            t = np.linspace(0, 0.1, 4410, False)
-            s = aud.Sound.buffer(np.sin(2*np.pi*440*t).astype(np.float32), 44100)
-            h = d.play(s); h.stop()
-            aud.HRTF()
-            seq = aud.Sequence(); seq.add(s, 0, 0, -1)
-            assert any(x.startswith("CODEC_") for x in dir(aud))
-            print("audaspace wheel OK")
-            EOF
+            python -c "import aud,numpy as np; d=aud.Device(); t=np.linspace(0,0.1,4410,False); s=aud.Sound.buffer(np.sin(2*np.pi*440*t).astype(np.float32),44100); h=d.play(s); h.stop(); aud.HRTF(); seq=aud.Sequence(); seq.add(s,0,0,-1); assert any(n.startswith('CODEC_') for n in dir(aud)); print('audaspace wheel OK')"
+
 
         run: |
           python3 -m cibuildwheel --output-dir wheelhouse;
