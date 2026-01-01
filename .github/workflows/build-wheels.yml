@@ -50,7 +50,7 @@ jobs:
           
           # Linux configuration
           CIBW_BEFORE_ALL_LINUX: >
-            yum install -y epel-release && yum install -y gcc gcc-c++ make cmake pkgconfig nasm yasm libsndfile-devel openal-soft-devel SDL2-devel fftw-devel jack-audio-connection-kit-devel pulseaudio-libs-devel libX11-devel libXext-devel libXfixes-devel libXrandr-devel libXcursor-devel libXinerama-devel mesa-libEGL-devel mesa-libGL-devel;
+            yum install -y epel-release && yum install -y gcc gcc-c++ make cmake pkgconfig nasm yasm libsndfile-devel openal-soft-devel SDL2-devel fftw-devel jack-audio-connection-kit-devel pulseaudio-libs-devel libX11-devel libXext-devel libXfixes-devel libXrandr-devel libXcursor-devel libXinerama-devel mesa-libEGL-devel mesa-libGL-devel libsamplerate-devel;
             git clone https://git.ffmpeg.org/ffmpeg.git /tmp/ffmpeg;
             cd /tmp/ffmpeg;
             ./configure --prefix=/opt/ffmpeg --enable-shared --disable-static --disable-debug --disable-doc --disable-programs --disable-everything --enable-avcodec --enable-avformat --enable-avutil --enable-swresample;
@@ -99,20 +99,64 @@ jobs:
             pip install delvewheel;
                     
           CIBW_BEFORE_ALL_WINDOWS: >
-            pip install --upgrade pip;
-            pip install cmake ninja menson;
-            git clone https://github.com/FFTW/fftw3.git C:\fftw;
-            cd C:\fftw;
-            cmake -S . -B build -DCMAKE_INSTALL_PREFIX=C:\fftw-install -DBUILD_SHARED_LIBS=ON -DENABLE_FLOAT=ON -DENABLE_DOUBLE=OFF -DENABLE_LONG_DOUBLE=OFF;
-            cmake --build build --config Release;
-            cmake --install build;
-            git clone https://git.ffmpeg.org/ffmpeg.git C:\ffmpeg;
-            cd C:\ffmpeg;
-            mkdir build;
-            cd build;
-            cmake .. -G "NMake Makefiles" -DCMAKE_INSTALL_PREFIX=C:\ffmpeg-install -DBUILD_SHARED_LIBS=ON -DENABLE_PROGRAMS=OFF -DENABLE_DOC=OFF;
-            cmake --build . --config Release;
-            cmake --install .;
+            choco install -y msys2;
+            set MSYS2_PATH_TYPE=inherit;
+            C:\tools\msys64\usr\bin\bash -lc "
+              pacman -Sy --noconfirm;
+              pacman -S --noconfirm \
+                git \
+                make \
+                nasm \
+                yasm \
+                pkg-config \
+                mingw-w64-x86_64-toolchain \
+                mingw-w64-x86_64-cmake \
+                mingw-w64-x86_64-meson \
+                mingw-w64-x86_64-fftw \
+                mingw-w64-x86_64-libsamplerate \
+                mingw-w64-x86_64-libsndfile &&
+              
+              export PREFIX=/mingw64 &&
+              export PATH=/mingw64/bin:\$PATH &&
+
+              echo '=== Building FFTW ===' &&
+              git clone https://github.com/FFTW/fftw3.git /tmp/fftw &&
+              cd /tmp/fftw &&
+              ./configure \
+                --prefix=\$PREFIX \
+                --enable-shared \
+                --enable-float \
+                --disable-double \
+                --disable-long-double &&
+              make -j\$(nproc) &&
+              make install &&
+
+              echo '=== Building FFmpeg ===' &&
+              git clone https://git.ffmpeg.org/ffmpeg.git /tmp/ffmpeg &&
+              cd /tmp/ffmpeg &&
+              ./configure \
+                --prefix=\$PREFIX \
+                --enable-shared \
+                --disable-static \
+                --disable-programs \
+                --disable-doc \
+                --enable-avcodec \
+                --enable-avformat \
+                --enable-avutil \
+                --enable-swresample &&
+              make -j\$(nproc) &&
+              make install &&
+
+              echo '=== Building Rubber Band ===' &&
+              git clone https://github.com/breakfastquay/rubberband.git /tmp/rubberband &&
+              cd /tmp/rubberband &&
+              meson setup build \
+                --prefix=\$PREFIX \
+                --libdir=lib &&
+              ninja -C build &&
+              ninja -C build install
+            ";
+
 
           CIBW_ENVIRONMENT_WINDOWS: >
             WITH_WASAPI=ON
