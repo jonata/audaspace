@@ -104,7 +104,7 @@ jobs:
             choco install -y ninja meson pkgconfiglite openal libsndfile &&
             git clone https://github.com/breakfastquay/rubberband.git C:/rubberband &&
             cd C:/rubberband &&
-            meson setup build --prefix=\$PREFIX --libdir=lib &&
+            meson setup build --libdir=lib &&
             ninja -C build &&
             ninja -C build install
 
