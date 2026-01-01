@@ -101,11 +101,11 @@ jobs:
             pip install delvewheel;
                     
           CIBW_BEFORE_ALL_WINDOWS: |
-            choco install -y ninja pkgconfiglite openal libsndfile;
-            git clone https://github.com/breakfastquay/rubberband.git C:\rubberband;
-            cd C:\rubberband;
-            meson setup build --libdir=lib;
-            ninja -C build;
+            choco install -y pkgconfiglite openal libsndfile &&
+            git clone https://github.com/breakfastquay/rubberband.git C:\rubberband %%
+            cd C:\rubberband &&
+            meson setup build --libdir=lib &&
+            ninja -C build &&
             ninja -C build install
 
           CIBW_ENVIRONMENT_WINDOWS: >
