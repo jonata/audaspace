@@ -84,12 +84,6 @@ jobs:
             WITH_JACK=ON
             WITH_WASAPI=OFF
 
-          CIBW_REPAIR_WHEEL_COMMAND_MACOS: >
-            mkdir -p {wheel_dir}/audaspace/.dylibs &&
-            find {build_dir} -name "libaudaspace*.dylib" -maxdepth 4 -exec cp {} {wheel_dir}/audaspace/.dylibs/ \; &&
-            install_name_tool -id @loader_path/.dylibs/$(basename {wheel_dir}/audaspace/.dylibs/libaudaspace*.dylib) {wheel_dir}/audaspace/.dylibs/libaudaspace*.dylib &&
-            delocate-wheel -w {dest_dir} -v {wheel}
-            
           CIBW_CMAKE_ARGS_MACOS: >
             -DCMAKE_INSTALL_RPATH=@loader_path
             -DCMAKE_INSTALL_NAME_DIR=@rpath
@@ -122,10 +116,10 @@ jobs:
             cmake --build . --config Release;
             cmake --install .;
 
-          CIBW_ENVIRONMENT_WINDOWS: >
+          CIBW_ENVIRONMENT_WINDOWS: |
             WITH_WASAPI=ON
-            FFTW_DIR="C:\fftw-install"
-            FFMPEG_DIR="C:\ffmpeg-install"
+            FFTW_DIR=C:\fftw-install
+            FFMPEG_DIR=C:\ffmpeg-install
             PATH=C:\fftw-install\bin;C:\ffmpeg-install\bin;%PATH%
             WITH_FFMPEG=ON
 
