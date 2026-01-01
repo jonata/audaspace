@@ -127,9 +127,15 @@ jobs:
             pip install delvewheel;
                     
           CIBW_BEFORE_ALL_WINDOWS: >
+            choco install -y pkgconfiglite openal libsndfile &&
+            pacman -S --needed  mingw-w64-x86_64-gcc  mingw-w64-x86_64-make  mingw-w64-x86_64-cmake &&
+            git clone https://github.com/FFTW/fftw3.git &&
+            cd fftw3 &&
+            ./configure --prefix="$PREFIX" --enable-shared --enable-float --disable-double --disable-long-double &&
+            make -j$(nproc) &&
+            make install &&
             python -m pip install --upgrade pip &&
             python -m pip install cmake ninja meson &&
-            choco install -y pkgconfiglite openal libsndfile &&
             git clone https://github.com/breakfastquay/rubberband.git &&
             cd rubberband &&
             meson setup build &&
@@ -144,6 +150,7 @@ jobs:
             WITH_SDL=OFF
             WITH_JACK=OFF
             WITH_FFTW=OFF
+            LIBRARY_PATH=c:/lib
   
           CIBW_TEST_REQUIRES: numpy
           CIBW_TEST_COMMAND: >
