@@ -19,7 +19,7 @@ jobs:
         os:
           - ubuntu-24.04
           - macos-15
-          - windows-2025
+          - windows-2022
 
     steps:
       - name: Checkout source
@@ -28,7 +28,7 @@ jobs:
           submodules: recursive
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -97,8 +97,8 @@ jobs:
             pip install delvewheel;
                     
           CIBW_BEFORE_ALL_WINDOWS: >
-            py -m pip install --upgrade pip &&
-            py -m pip install cmake ninja &&
+            python3 -m pip install --upgrade pip &&
+            python3 -m pip install cmake ninja &&
             git clone https://github.com/FFTW/fftw3.git C:\fftw;
             cd C:\fftw;
             cmake -S . -B build -DCMAKE_INSTALL_PREFIX=C:\fftw-install -DBUILD_SHARED_LIBS=ON -DENABLE_FLOAT=ON -DENABLE_DOUBLE=OFF -DENABLE_LONG_DOUBLE=OFF;
