@@ -66,11 +66,12 @@ jobs:
             ninja -C build install;
 
           CIBW_BEFORE_BUILD_LINUX: >
-            python -m pip install --upgrade pip setuptools scikit-build-core numpy pybind11 cmake ninja;
-            ls -la;
-            pwd;
-            python -m pip list | grep -i audit || true;
-            python -m pip install auditwheel;
+            python -m pip install --upgrade pip setuptools scikit-build-core numpy pybind11 cmake ninja auditwheel &&
+            echo "=== Checking built libraries ===" &&
+            find /opt -name "*.so*" -type f 2>/dev/null | head -20 &&
+            echo "=== Checking library symlinks ===" &&
+            ls -la /opt/rubberband/lib/ || true &&
+            ls -la /opt/ffmpeg/lib/ | head -20 || true
 
           CIBW_ENVIRONMENT_LINUX: >
             PKG_CONFIG_PATH=/opt/ffmpeg/lib/pkgconfig:/opt/rubberband/lib/pkgconfig
@@ -89,12 +90,13 @@ jobs:
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: >
             echo "=== Before repair ===" &&
             unzip -l {wheel} | head -20 || true &&
+            echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" &&
             auditwheel show {wheel} || true &&
             echo "=== Running repair ===" &&
-            LD_LIBRARY_PATH=/opt/ffmpeg/lib:/opt/rubberband/lib:$LD_LIBRARY_PATH auditwheel repair -w {dest_dir} {wheel} -L /opt/ffmpeg/lib -L /opt/rubberband/lib || (echo "Repair failed, copying wheel as-is" && cp {wheel} {dest_dir}/) &&
+            auditwheel repair -w {dest_dir} {wheel} || (echo "Repair failed, copying wheel as-is" && cp {wheel} {dest_dir}/) &&
             echo "=== After repair ===" &&
             ls -lh {dest_dir}/*.whl &&
-            unzip -l {dest_dir}/*.whl | grep -E '\.so|\.pyd|__init__' | head -20 || true
+            unzip -l {dest_dir}/*.whl | grep -E '\.so|\.pyd|__init__' | head -30 || true
             
           # macOS configuration
           CIBW_BEFORE_ALL_MACOS: >
