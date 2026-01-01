@@ -44,6 +44,7 @@ jobs:
       - name: Build wheels with cibuildwheel
         env:
           CIBW_BUILD: "cp38-* cp39-* cp310-* cp311-* cp312-*"
+          CIBW_BUILD_VERBOSITY: 1
           CIBW_SKIP: >
             *-musllinux_*
             cp38-macosx_arm64
@@ -66,13 +67,18 @@ jobs:
           CIBW_ENVIRONMENT_LINUX: >
             PKG_CONFIG_PATH=/opt/ffmpeg/lib/pkgconfig:/opt/rubberband/lib/pkgconfig
             LD_LIBRARY_PATH=/opt/ffmpeg/lib:/opt/rubberband/lib
+            CMAKE_PREFIX_PATH=/opt/ffmpeg:/opt/rubberband
             WITH_FFMPEG=ON
             WITH_RUBBERBAND=ON
             WITH_PULSEAUDIO=ON
             WITH_JACK=ON
             WITH_WASAPI=OFF
+            WITH_PIPEWIRE=ON
+            VERBOSE=1
 
-          CIBW_REPAIR_WHEEL_COMMAND_LINUX: auditwheel repair -w {dest_dir} {wheel} --lib-sdir . || cp {wheel} {dest_dir}/
+          CIBW_REPAIR_WHEEL_COMMAND_LINUX: >
+            auditwheel show {wheel} || true;
+            auditwheel repair -w {dest_dir} {wheel} || cp {wheel} {dest_dir}/
             
           # macOS configuration
           CIBW_BEFORE_ALL_MACOS: >
@@ -114,24 +120,14 @@ jobs:
 
           CIBW_ENVIRONMENT_WINDOWS: >
             WITH_WASAPI=ON
-            WITH_FFMPEG=ON 
-            WITH_LIBSNDFILE=ON
-            WITH_OPENAL=ON
-            WITH_SDL=ON
-            WITH_JACK=ON
+            WITH_FFMPEG=OFF 
+            WITH_LIBSNDFILE=OFF
+            WITH_OPENAL=OFF
+            WITH_SDL=OFF
+            WITH_JACK=OFF
             WITH_FFTW=OFF
-            WITH_STRICT_DEPENDENCIES=ON
-            FFTW_DIR="C:\fftw-install"
-            FFMPEG_DIR="C:\ffmpeg-install"
-            LIBSNDFILE_DIR="C:\libsndfile-install"
-            OPENAL_LIBRARY="C:\openal-install"
-            OPENAL_INCLUDE_DIR="C:\openal-install"
-            SDL2="C:\sdl-install"
-            JACK_DIR="C:\jack-install"
-            CMAKE_INSTALL_PREFIX="C:\audaspace"
-            LIBRARY_PATH="C:\ProgramData\chocolatey\lib\ffmpeg;C:\fftw-install;C:\ffmpeg-install;C:\libsndfile-install;C:\openal-install;C:\sdl-install;C:\jack-install"
             CMAKE_PREFIX_PATH="C:\ProgramData\chocolatey\lib\ffmpeg;C:\fftw-install;C:\ffmpeg-install;C:\libsndfile-install;C:\openal-install;C:\sdl-install;C:\jack-install"
-            PATH="C:\fftw-install\bin;C:\ffmpeg-install\bin;C:\libsndfile-install\bin;C:\openal-install\bin;C:\sdl-install\bin;C:\jack-install\bin;$PATH"
+            
   
           CIBW_TEST_REQUIRES: numpy
           CIBW_TEST_COMMAND: >
