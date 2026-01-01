@@ -128,13 +128,10 @@ jobs:
                     
           CIBW_BEFORE_ALL_WINDOWS: >
             choco install -y pkgconfiglite openal libsndfile mingw &&
-            git clone https://github.com/FFTW/fftw3.git &&
-            cd fftw3 &&
-            ./configure --prefix="$PREFIX" --enable-shared --enable-float --disable-double --disable-long-double &&
-            make -j$(nproc) &&
-            make install &&
             python -m pip install --upgrade pip &&
             python -m pip install cmake ninja meson &&
+            curl -L -o C:\fftw-3.3.5-dll64.zip http://fftw.org/fftw-3.3.5-dll64.zip &&
+            unzip C:\fftw-3.3.5-dll64.zip -d C:\lib &&
             git clone https://github.com/breakfastquay/rubberband.git &&
             cd rubberband &&
             meson setup build &&
@@ -149,8 +146,8 @@ jobs:
             WITH_SDL=OFF
             WITH_JACK=OFF
             WITH_FFTW=OFF
-            LIBRARY_PATH=c:/lib
-  
+            LIBRARY_PATH=C:\lib
+
           CIBW_TEST_REQUIRES: numpy
           CIBW_TEST_COMMAND: >
             python -c "import sys; print('Python:', sys.executable); import site; print('Site packages:', site.getsitepackages()); import os; print('PYTHONPATH:', os.environ.get('PYTHONPATH', 'not set')); print('sys.path:'); [print('  ', p) for p in sys.path]" &&
