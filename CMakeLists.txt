@@ -1258,21 +1258,18 @@ if(WITH_PYTHON)
 
 		# Install Python module for scikit-build-core compatibility
 		install(CODE "
-			file(GLOB_RECURSE PY_MODULE \"${CMAKE_CURRENT_BINARY_DIR}/build/lib.*/aud*.so\")
-			if(PY_MODULE)
-				list(GET PY_MODULE 0 MODULE_FILE)
-				message(STATUS \"Installing Python module: \${MODULE_FILE}\")
-				
-				# Set RPATH to find libraries in lib/ directory
+			execute_process(COMMAND ${CMAKE_COMMAND} --build ${CMAKE_CURRENT_BINARY_DIR} --target pythonmodule)
+			execute_process(COMMAND find ${CMAKE_CURRENT_BINARY_DIR} -name \"*aud*.so\" -exec cp {} ${CMAKE_INSTALL_PREFIX} \;
+			                ERROR_QUIET)
+			# Set RPATH for the module
+			file(GLOB MODULE_FILE \"${CMAKE_INSTALL_PREFIX}/*aud*.so\")
+			if(MODULE_FILE)
 				if(APPLE)
 					execute_process(COMMAND install_name_tool -add_rpath @loader_path/lib \${MODULE_FILE})
 				elseif(UNIX)
 					execute_process(COMMAND patchelf --set-rpath \"\\\$ORIGIN/lib\" \"\${MODULE_FILE}\" 
 					                ERROR_QUIET)
 				endif()
-				
-				file(INSTALL \${MODULE_FILE} DESTINATION \"\${CMAKE_INSTALL_PREFIX}\")
-				
 				# Set RPATH for libraries on macOS
 				if(APPLE)
 					file(GLOB LIB_FILES \"\${CMAKE_INSTALL_PREFIX}/lib/libaudaspace*.dylib\")
@@ -1280,9 +1277,6 @@ if(WITH_PYTHON)
 						execute_process(COMMAND install_name_tool -add_rpath @loader_path \${LIB_FILE})
 					endforeach()
 				endif()
-			else()
-				# Fallback to old install method
-				execute_process(COMMAND ${PYTHON_EXECUTABLE} setup.py install --root=\$ENV{DESTDIR} --prefix=${CMAKE_INSTALL_PREFIX})
 			endif()
 		")
 	endif()
