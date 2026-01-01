@@ -145,7 +145,7 @@ jobs:
             mkdir C:\lib &&
             unzip build-dependencies.zip -d C:\lib
             
-          CIBW_CMAKE_OPTIONS_WINDOWS: -DLIBRARY_PATH=C:\lib
+          CIBW_CMAKE_OPTIONS_WINDOWS: -DLIBRARY_PATH=C:\lib\build-dependencies-1.3.0-win64
 
           CIBW_ENVIRONMENT_WINDOWS: >
             WITH_WASAPI=ON

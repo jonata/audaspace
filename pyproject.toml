@@ -46,7 +46,7 @@ install.strip = false
 
 [tool.scikit-build.cmake.define]
 BUILD_DEMOS = "OFF"
-SHARED_LIBRARY = "ON"
+SHARED_LIBRARY = "OFF"
 WITH_C = "ON"
 WITH_DOCS = "OFF"
 WITH_PYTHON = "ON"
