@@ -110,12 +110,13 @@ jobs:
             ninja -C build &&
             ninja -C build install &&
             cd .. &&
-            git clone https://github.com/jackaudio/jack2.git C:\jack &&
-            cd C:\jack &&
+            git clone https://github.com/jackaudio/jack2.git &&
+            cd jack2 &&
             git submodule update --init --recursive &&
-            python -m meson setup build --prefix=C:\jack-install -Ddocs=disabled -Dtests=disabled &&
-            python -m ninja -C build &&
-            python -m ninja -C build install
+            python ./waf configure --prefix=/mingw64 --classic --dbus &&
+            python ./waf build &&
+            python ./waf install --destdir=$PWD/install &&
+            cd ..
 
           CIBW_ENVIRONMENT_WINDOWS: >
             WITH_WASAPI=ON
