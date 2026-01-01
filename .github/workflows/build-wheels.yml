@@ -83,11 +83,11 @@ jobs:
             CMAKE_BUILD_WITH_INSTALL_RPATH=ON
             WITH_JACK=ON
             WITH_WASAPI=OFF
-            
+
           CIBW_REPAIR_WHEEL_COMMAND_MACOS: >
             mkdir -p {wheel_dir}/audaspace/.dylibs &&
-            cp {build_dir}/lib/libaudaspace*.dylib {wheel_dir}/audaspace/.dylibs/ &&
-            install_name_tool -id @loader_path/.dylibs/libaudaspace.1.8.dylib {wheel_dir}/audaspace/.dylibs/libaudaspace.1.8.dylib &&
+            find {build_dir} -name "libaudaspace*.dylib" -maxdepth 4 -exec cp {} {wheel_dir}/audaspace/.dylibs/ \; &&
+            install_name_tool -id @loader_path/.dylibs/$(basename {wheel_dir}/audaspace/.dylibs/libaudaspace*.dylib) {wheel_dir}/audaspace/.dylibs/libaudaspace*.dylib &&
             delocate-wheel -w {dest_dir} -v {wheel}
             
           CIBW_CMAKE_ARGS_MACOS: >
@@ -107,34 +107,26 @@ jobs:
             pip install delvewheel;
                     
           CIBW_BEFORE_ALL_WINDOWS: >
-            set -e;
-            where cl;
-            python -V;
             python -m pip install --upgrade pip;
-            python -m pip install cmake ninja meson;
+            python -m pip install cmake ninja menson;
             git clone https://github.com/FFTW/fftw3.git C:\fftw;
-            cmake -S C:\fftw -B C:\fftw\build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=C:\fftw-install -DBUILD_SHARED_LIBS=ON -DENABLE_FLOAT=ON -DENABLE_DOUBLE=OFF -DENABLE_LONG_DOUBLE=OFF;
-            cmake --build C:\fftw\build;
-            cmake --install C:\fftw\build;
+            cd C:\fftw;
+            cmake -S . -B build -DCMAKE_INSTALL_PREFIX=C:\fftw-install -DBUILD_SHARED_LIBS=ON -DENABLE_FLOAT=ON -DENABLE_DOUBLE=OFF -DENABLE_LONG_DOUBLE=OFF;
+            cmake --build build --config Release;
+            cmake --install build;
             git clone https://git.ffmpeg.org/ffmpeg.git C:\ffmpeg;
             cd C:\ffmpeg;
             mkdir build;
             cd build;
-            cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=C:\ffmpeg-install -DBUILD_SHARED_LIBS=ON -DENABLE_PROGRAMS=OFF -DENABLE_DOC=OFF;
-            cmake --build .;
+            cmake .. -G "NMake Makefiles" -DCMAKE_INSTALL_PREFIX=C:\ffmpeg-install -DBUILD_SHARED_LIBS=ON -DENABLE_PROGRAMS=OFF -DENABLE_DOC=OFF;
+            cmake --build . --config Release;
             cmake --install .;
-            git clone https://github.com/breakfastquay/rubberband.git C:\rubberband;
-            cd C:\rubberband;
-            meson setup build --prefix=C:\rubberband-install -Dresampler=libsamplerate -Dfft=fftw -Dtests=disabled;
-            ninja -C build;
-            ninja -C build install;
-
 
           CIBW_ENVIRONMENT_WINDOWS: >
             WITH_WASAPI=ON
             FFTW_DIR="C:\fftw-install"
             FFMPEG_DIR="C:\ffmpeg-install"
-            PATH="C:\fftw-install\bin;C:\ffmpeg-install\bin;%PATH%"
+            PATH=C:\fftw-install\bin;C:\ffmpeg-install\bin;%PATH%
             WITH_FFMPEG=ON
 
         run: |
