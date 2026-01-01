@@ -112,7 +112,7 @@ jobs:
             cd C:\ffmpeg
             mkdir build
             cd build
-            cmake .. -G "NMake Makefiles" -DCMAKE_INSTALL_PREFIX=C:\ffmpeg-install -DBUILD_SHARED_LIBS=ON -DENABLE_PROGRAMS=OFF -DENABLE_DOC=OFF
+            cmake .. -DCMAKE_INSTALL_PREFIX=C:\ffmpeg-install -DBUILD_SHARED_LIBS=ON -DENABLE_PROGRAMS=OFF -DENABLE_DOC=OFF
             cmake --build . --config Release
             cmake --install .
             git clone https://github.com/libsndfile/libsndfile.git C:\libsndfile
