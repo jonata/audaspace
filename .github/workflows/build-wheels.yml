@@ -101,62 +101,6 @@ jobs:
           CIBW_BEFORE_ALL_WINDOWS: >
             choco install -y msys2;
             set MSYS2_PATH_TYPE=inherit;
-            C:\tools\msys64\usr\bin\bash -lc "
-              pacman -Sy --noconfirm;
-              pacman -S --noconfirm \
-                git \
-                make \
-                nasm \
-                yasm \
-                pkg-config \
-                mingw-w64-x86_64-toolchain \
-                mingw-w64-x86_64-cmake \
-                mingw-w64-x86_64-meson \
-                mingw-w64-x86_64-fftw \
-                mingw-w64-x86_64-libsamplerate \
-                mingw-w64-x86_64-libsndfile &&
-              
-              export PREFIX=/mingw64 &&
-              export PATH=/mingw64/bin:\$PATH &&
-
-              echo '=== Building FFTW ===' &&
-              git clone https://github.com/FFTW/fftw3.git /tmp/fftw &&
-              cd /tmp/fftw &&
-              ./configure \
-                --prefix=\$PREFIX \
-                --enable-shared \
-                --enable-float \
-                --disable-double \
-                --disable-long-double &&
-              make -j\$(nproc) &&
-              make install &&
-
-              echo '=== Building FFmpeg ===' &&
-              git clone https://git.ffmpeg.org/ffmpeg.git /tmp/ffmpeg &&
-              cd /tmp/ffmpeg &&
-              ./configure \
-                --prefix=\$PREFIX \
-                --enable-shared \
-                --disable-static \
-                --disable-programs \
-                --disable-doc \
-                --enable-avcodec \
-                --enable-avformat \
-                --enable-avutil \
-                --enable-swresample &&
-              make -j\$(nproc) &&
-              make install &&
-
-              echo '=== Building Rubber Band ===' &&
-              git clone https://github.com/breakfastquay/rubberband.git /tmp/rubberband &&
-              cd /tmp/rubberband &&
-              meson setup build \
-                --prefix=\$PREFIX \
-                --libdir=lib &&
-              ninja -C build &&
-              ninja -C build install
-            ";
-
 
           CIBW_ENVIRONMENT_WINDOWS: >
             WITH_WASAPI=ON
@@ -258,3 +202,63 @@ jobs:
           packages-dir: dist/
           skip-existing: true
           verbose: true
+
+
+
+
+
+# C:\tools\msys64\usr\bin\bash -lc "
+#   pacman -Sy --noconfirm;
+#   pacman -S --noconfirm \
+#     git \
+#     make \
+#     nasm \
+#     yasm \
+#     pkg-config \
+#     mingw-w64-x86_64-toolchain \
+#     mingw-w64-x86_64-cmake \
+#     mingw-w64-x86_64-meson \
+#     mingw-w64-x86_64-fftw \
+#     mingw-w64-x86_64-libsamplerate \
+#     mingw-w64-x86_64-libsndfile &&
+  
+#   export PREFIX=/mingw64 &&
+#   export PATH=/mingw64/bin:\$PATH &&
+
+#   echo '=== Building FFTW ===' &&
+#   git clone https://github.com/FFTW/fftw3.git /tmp/fftw &&
+#   cd /tmp/fftw &&
+#   ./configure \
+#     --prefix=\$PREFIX \
+#     --enable-shared \
+#     --enable-float \
+#     --disable-double \
+#     --disable-long-double &&
+#   make -j\$(nproc) &&
+#   make install &&
+
+#   echo '=== Building FFmpeg ===' &&
+#   git clone https://git.ffmpeg.org/ffmpeg.git /tmp/ffmpeg &&
+#   cd /tmp/ffmpeg &&
+#   ./configure \
+#     --prefix=\$PREFIX \
+#     --enable-shared \
+#     --disable-static \
+#     --disable-programs \
+#     --disable-doc \
+#     --enable-avcodec \
+#     --enable-avformat \
+#     --enable-avutil \
+#     --enable-swresample &&
+#   make -j\$(nproc) &&
+#   make install &&
+
+#   echo '=== Building Rubber Band ===' &&
+#   git clone https://github.com/breakfastquay/rubberband.git /tmp/rubberband &&
+#   cd /tmp/rubberband &&
+#   meson setup build \
+#     --prefix=\$PREFIX \
+#     --libdir=lib &&
+#   ninja -C build &&
+#   ninja -C build install
+# ";
