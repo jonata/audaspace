@@ -74,11 +74,11 @@ jobs:
             ls -la /opt/ffmpeg/lib/ | head -20 || true
 
           CIBW_ENVIRONMENT_LINUX: >
-            PKG_CONFIG_PATH=/opt/ffmpeg/lib/pkgconfig:/opt/rubberband/lib/pkgconfig
-            LD_LIBRARY_PATH=/opt/ffmpeg/lib:/opt/rubberband/lib
+            PKG_CONFIG_PATH=/opt/ffmpeg/lib/pkgconfig:/opt/rubberband/lib64/pkgconfig
+            LD_LIBRARY_PATH=/opt/ffmpeg/lib:/opt/rubberband/lib64
             CMAKE_PREFIX_PATH=/opt/ffmpeg:/opt/rubberband
             CMAKE_BUILD_WITH_INSTALL_RPATH=ON
-            CMAKE_INSTALL_RPATH=/opt/ffmpeg/lib:/opt/rubberband/lib
+            CMAKE_INSTALL_RPATH=/opt/ffmpeg/lib:/opt/rubberband/lib64
             WITH_FFMPEG=ON
             WITH_RUBBERBAND=ON
             WITH_PULSEAUDIO=ON
@@ -127,8 +127,7 @@ jobs:
             pip install delvewheel;
                     
           CIBW_BEFORE_ALL_WINDOWS: >
-            choco install -y pkgconfiglite openal libsndfile &&
-            pacman -S --needed  mingw-w64-x86_64-gcc  mingw-w64-x86_64-make  mingw-w64-x86_64-cmake &&
+            choco install -y pkgconfiglite openal libsndfile mingw &&
             git clone https://github.com/FFTW/fftw3.git &&
             cd fftw3 &&
             ./configure --prefix="$PREFIX" --enable-shared --enable-float --disable-double --disable-long-double &&
