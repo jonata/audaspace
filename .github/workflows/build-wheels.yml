@@ -104,11 +104,12 @@ jobs:
             python -m pip install --upgrade pip &&
             python -m pip install cmake ninja meson &&
             choco install -y pkgconfiglite openal libsndfile &&
-            git clone https://github.com/breakfastquay/rubberband.git C:\rubberband &&
-            cd C:\rubberband &&
+            git clone https://github.com/breakfastquay/rubberband.git &&
+            cd rubberband &&
             meson setup build --libdir=lib &&
             ninja -C build &&
             ninja -C build install &&
+            cd .. &&
             git clone https://github.com/jackaudio/jack2.git C:\jack &&
             cd C:\jack &&
             git submodule update --init --recursive &&
