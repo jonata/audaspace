@@ -72,11 +72,13 @@ jobs:
             python --version &&
             python -c "import sys; print('Executable:', sys.executable)" &&
             python -c "import numpy; print('NumPy version:', numpy.__version__)" &&
+            python -c "import pybind11; print('pybind11 version:', pybind11.__version__)" &&
             echo "=== Checking built libraries ===" &&
             find /opt -name "*.so*" -type f 2>/dev/null | head -20 &&
             echo "=== Checking library symlinks ===" &&
             ls -la /opt/rubberband/lib/ || true &&
-            ls -la /opt/ffmpeg/lib/ | head -20 || true
+            ls -la /opt/ffmpeg/lib/ | head -20 || true &&
+            echo "=== Build will start now, Python module should be built ===" 
 
           CIBW_ENVIRONMENT_LINUX: >
             PKG_CONFIG_PATH=/opt/ffmpeg/lib/pkgconfig:/opt/rubberband/lib64/pkgconfig
@@ -92,7 +94,7 @@ jobs:
             WITH_PIPEWIRE=ON
             VERBOSE=1
 
-          CIBW_CMAKE_OPTIONS_LINUX: -DPython_EXECUTABLE=$(python -c "import sys; print(sys.executable)")
+          CIBW_CMAKE_OPTIONS_LINUX: -DPython_EXECUTABLE=$(python -c "import sys; print(sys.executable)") --debug-output
 
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: >
             echo "=== Before repair - Full wheel contents ===" &&
@@ -146,13 +148,8 @@ jobs:
 
           CIBW_ENVIRONMENT_WINDOWS: >
             WITH_WASAPI=ON
-            WITH_FFMPEG=OFF 
-            WITH_LIBSNDFILE=OFF
-            WITH_OPENAL=OFF
-            WITH_SDL=OFF
-            WITH_JACK=OFF
-            WITH_FFTW=OFF
-            LIBRARY_PATH="C:\lib"
+            WITH_STRICT_DEPENDENCIES=ON
+            LIBRARY_PATH=C:\lib
 
           CIBW_TEST_REQUIRES: numpy
           CIBW_TEST_COMMAND: >
