@@ -42,6 +42,9 @@ wheel.packages = []
 wheel.install-dir = ""
 install.strip = false
 
+[tool.scikit-build.wheel]
+exclude = ["include/", "lib/pkgconfig/"]
+
 [tool.scikit-build.cmake.define]
 BUILD_DEMOS = "OFF"
 SHARED_LIBRARY = "ON"

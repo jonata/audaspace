@@ -68,6 +68,10 @@ jobs:
           CIBW_BEFORE_BUILD_LINUX: >
             python -m pip install --upgrade pip setuptools scikit-build-core numpy pybind11 cmake ninja auditwheel &&
             yum install -y patchelf &&
+            echo "=== Python info ===" &&
+            python --version &&
+            python -c "import sys; print('Executable:', sys.executable)" &&
+            python -c "import numpy; print('NumPy version:', numpy.__version__)" &&
             echo "=== Checking built libraries ===" &&
             find /opt -name "*.so*" -type f 2>/dev/null | head -20 &&
             echo "=== Checking library symlinks ===" &&
@@ -87,6 +91,8 @@ jobs:
             WITH_WASAPI=OFF
             WITH_PIPEWIRE=ON
             VERBOSE=1
+
+          CIBW_CMAKE_OPTIONS_LINUX: -DPython_EXECUTABLE=$(python -c "import sys; print(sys.executable)")
 
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: >
             echo "=== Before repair - Full wheel contents ===" &&
@@ -133,16 +139,10 @@ jobs:
             pip install delvewheel;
                     
           CIBW_BEFORE_ALL_WINDOWS: >
-            choco install -y pkgconfiglite openal libsndfile mingw &&
-            python -m pip install --upgrade pip &&
-            python -m pip install cmake ninja meson &&
-            curl -L -o fftw-3.3.5-dll64.zip https://fftw.org/pub/fftw/fftw-3.3.5-dll64.zip &&
-            unzip fftw-3.3.5-dll64.zip -d C:\lib &&
-            git clone https://github.com/breakfastquay/rubberband.git &&
-            cd rubberband &&
-            meson setup build &&
-            ninja -C build &&
-            ninja -C build install
+            curl -L -o build-dependencies.zip https://github.com/audaspace/audaspace/releases/download/v1.3.0/build-dependencies-1.3.0-win64.zip &&
+            mkdir C:\lib &&
+            unzip build-dependencies.zip -d C:\lib
+            
 
           CIBW_ENVIRONMENT_WINDOWS: >
             WITH_WASAPI=ON
@@ -152,7 +152,7 @@ jobs:
             WITH_SDL=OFF
             WITH_JACK=OFF
             WITH_FFTW=OFF
-            LIBRARY_PATH=C:\lib
+            LIBRARY_PATH="C:\lib"
 
           CIBW_TEST_REQUIRES: numpy
           CIBW_TEST_COMMAND: >
