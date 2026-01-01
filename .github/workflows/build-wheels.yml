@@ -102,11 +102,11 @@ jobs:
                     
           CIBW_BEFORE_ALL_WINDOWS: >
             python -m pip install --upgrade pip && python -m pip install cmake ninja meson &&
-            git clone https://git.ffmpeg.org/ffmpeg.git C:\ffmpeg &&
-            cd C:\ffmpeg &&
+            git clone https://git.ffmpeg.org/ffmpeg.git C:\Users\runneradmin\ffmpeg &&
+            cd C:\Users\runneradmin\ffmpeg &&
             mkdir build &&            
             cd build &&            
-            cmake .. -DCMAKE_INSTALL_PREFIX=C:\ffmpeg-install -DBUILD_SHARED_LIBS=ON -DENABLE_PROGRAMS=OFF -DENABLE_DOC=OFF &&
+            cmake .. -DCMAKE_INSTALL_PREFIX=C:\Users\runneradmin\ffmpeg-install -DBUILD_SHARED_LIBS=ON -DENABLE_PROGRAMS=OFF -DENABLE_DOC=OFF &&
             cmake --build . --config Release &&
             cmake --install . ;
 
@@ -118,14 +118,14 @@ jobs:
             WITH_SDL=ON
             WITH_JACK=ON
             FFTW_DIR="C:\fftw-install"
-            FFMPEG_DIR="C:\ffmpeg-install"
+            FFMPEG_DIR="C:\Users\runneradmin\ffmpeg-install"
             LIBSNDFILE_DIR="C:\libsndfile-install"
             OPENAL_LIBRARY="C:\openal-install"
             OPENAL_INCLUDE_DIR="C:\openal-install"
             SDL2="C:\sdl-install"
             JACK_DIR="C:\jack-install"
-            CMAKE_PREFIX_PATH="C:\fftw-install;C:\ffmpeg-install;C:\libsndfile-install;C:\openal-install;C:\sdl-install;C:\jack-install"
-            PATH="C:\fftw-install\bin;C:\ffmpeg-install\bin;C:\libsndfile-install\bin;C:\openal-install\bin;C:\sdl-install\bin;C:\jack-install\bin;$PATH"
+            CMAKE_PREFIX_PATH="C:\fftw-install;C:\Users\runneradmin\ffmpeg-install;C:\libsndfile-install;C:\openal-install;C:\sdl-install;C:\jack-install"
+            PATH="C:\fftw-install\bin;C:\Users\runneradmin\ffmpeg-install\bin;C:\libsndfile-install\bin;C:\openal-install\bin;C:\sdl-install\bin;C:\jack-install\bin;$PATH"
 
         run: |
           python3 -m cibuildwheel --output-dir wheelhouse;
