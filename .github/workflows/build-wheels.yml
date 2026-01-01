@@ -67,6 +67,7 @@ jobs:
 
           CIBW_BEFORE_BUILD_LINUX: >
             python -m pip install --upgrade pip setuptools scikit-build-core numpy pybind11 cmake ninja auditwheel &&
+            yum install -y patchelf &&
             echo "=== Checking built libraries ===" &&
             find /opt -name "*.so*" -type f 2>/dev/null | head -20 &&
             echo "=== Checking library symlinks ===" &&
@@ -88,15 +89,20 @@ jobs:
             VERBOSE=1
 
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: >
-            echo "=== Before repair ===" &&
-            unzip -l {wheel} | head -20 || true &&
+            echo "=== Before repair - Full wheel contents ===" &&
+            unzip -l {wheel} || true &&
+            echo "" &&
+            echo "=== Before repair - Looking for Python extension .so files ===" &&
+            unzip -l {wheel} | grep -E "\.so" || echo "No .so files found!" &&
             echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" &&
             auditwheel show {wheel} || true &&
             echo "=== Running repair ===" &&
             auditwheel repair -w {dest_dir} {wheel} || (echo "Repair failed, copying wheel as-is" && cp {wheel} {dest_dir}/) &&
             echo "=== After repair ===" &&
             ls -lh {dest_dir}/*.whl &&
-            unzip -l {dest_dir}/*.whl | grep -E '\.so|\.pyd|__init__' | head -30 || true
+            echo "" &&
+            echo "=== After repair - Full wheel contents ===" &&
+            unzip -l {dest_dir}/*.whl || true
             
           # macOS configuration
           CIBW_BEFORE_ALL_MACOS: >
@@ -130,8 +136,8 @@ jobs:
             choco install -y pkgconfiglite openal libsndfile mingw &&
             python -m pip install --upgrade pip &&
             python -m pip install cmake ninja meson &&
-            curl -L -o C:\fftw-3.3.5-dll64.zip http://fftw.org/fftw-3.3.5-dll64.zip &&
-            unzip C:\fftw-3.3.5-dll64.zip -d C:\lib &&
+            curl -L -o fftw-3.3.5-dll64.zip https://fftw.org/pub/fftw/fftw-3.3.5-dll64.zip &&
+            unzip fftw-3.3.5-dll64.zip -d C:\lib &&
             git clone https://github.com/breakfastquay/rubberband.git &&
             cd rubberband &&
             meson setup build &&
