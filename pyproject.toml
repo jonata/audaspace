@@ -38,6 +38,7 @@ Issues = "https://github.com/audaspace/audaspace/issues"
 minimum-version = "0.8"
 build-dir = "build/{wheel_tag}"
 cmake.build-type = "Release"
+cmake.verbose = true
 wheel.exclude = ["include/", "lib/pkgconfig/"]
 install.strip = false
 wheel.py-api = "py3"
@@ -110,7 +111,7 @@ repair-wheel-command = "auditwheel repair -w {dest_dir} {wheel} --lib-sdir . || 
 before-all = [
     "brew install ffmpeg libsndfile sdl2 fftw || true",
 ]
-repair-wheel-command = "delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel}"
+repair-wheel-command = "delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel} --ignore-missing-dependencies"
 environment = { WITH_COREAUDIO = "ON", MACOSX_DEPLOYMENT_TARGET = "10.15" }
 
 [tool.cibuildwheel.windows]
@@ -120,7 +121,7 @@ before-all = [
 before-build = [
     "pip install delvewheel",
     "vcpkg integrate install",
-    "vcpkg install --triplet=x64-windows ffmpeg[core,avcodec,avformat,avutil,swresample]:x64-windows libsndfile:x64-windows openal-soft:x64-windows sdl2:x64-windows fftw3:x64-windows",
+    "vcpkg install --triplet=x64-windows ffmpeg[core,avcodec,avformat,swresample]:x64-windows libsndfile:x64-windows openal-soft:x64-windows sdl2:x64-windows fftw3:x64-windows",
 ]
 repair-wheel-command = "delvewheel repair -w {dest_dir} {wheel} --add-path C:/vcpkg/installed/x64-windows/bin;C:/vcpkg/installed/x64-windows/debug/bin || cp {wheel} {dest_dir}/"
 environment = { WITH_WASAPI = "ON", CMAKE_TOOLCHAIN_FILE = "C:/vcpkg/scripts/buildsystems/vcpkg.cmake", VCPKG_TARGET_TRIPLET = "x64-windows", PKG_CONFIG_PATH = "C:/vcpkg/installed/x64-windows/lib/pkgconfig", CMAKE_FIND_ROOT_PATH = "C:/vcpkg/installed/x64-windows" }

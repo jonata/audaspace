@@ -1253,22 +1253,26 @@ if(WITH_PYTHON)
 			)
 	endif()
 
-	add_library(audaspace-py ${LIBRARY_TYPE} ${PYTHON_SRC} ${PYTHON_HDR})
-	target_link_libraries(audaspace-py audaspace ${PYTHON_LIBRARIES})
-	set_target_properties(audaspace-py PROPERTIES SOVERSION ${AUDASPACE_VERSION})
+	# Only build audaspace-py library if NOT using scikit-build-core
+	# When using scikit-build-core, we build the aud module directly
+	if(NOT DEFINED SKBUILD)
+		add_library(audaspace-py ${LIBRARY_TYPE} ${PYTHON_SRC} ${PYTHON_HDR})
+		target_link_libraries(audaspace-py audaspace ${PYTHON_LIBRARIES})
+		set_target_properties(audaspace-py PROPERTIES SOVERSION ${AUDASPACE_VERSION})
 
-	if(APPLE)
-		set_target_properties(audaspace-py PROPERTIES INSTALL_NAME_DIR "@rpath")
-	endif()
+		if(APPLE)
+			set_target_properties(audaspace-py PROPERTIES INSTALL_NAME_DIR "@rpath")
+		endif()
 
-	if(AUDASPACE_STANDALONE)
-		install(TARGETS audaspace-py
-			RUNTIME DESTINATION ${BIN_DESTINATION}
-			LIBRARY DESTINATION ${LIB_DESTINATION}
-			ARCHIVE DESTINATION ${LIB_DESTINATION}
-		)
+		if(AUDASPACE_STANDALONE)
+			install(TARGETS audaspace-py
+				RUNTIME DESTINATION ${BIN_DESTINATION}
+				LIBRARY DESTINATION ${LIB_DESTINATION}
+				ARCHIVE DESTINATION ${LIB_DESTINATION}
+			)
 
-		install(FILES ${PYTHON_HDR} DESTINATION include/audaspace/python)
+			install(FILES ${PYTHON_HDR} DESTINATION include/audaspace/python)
+		endif()
 	endif()
 
 	if(WITH_PYTHON_MODULE)
@@ -1316,6 +1320,12 @@ if(WITH_PYTHON)
 			if(WITH_RUBBERBAND)
 				target_compile_definitions(aud PRIVATE WITH_RUBBERBAND)
 			endif()
+			
+			# Set module properties
+			set_target_properties(aud PROPERTIES
+				PREFIX ""
+				OUTPUT_NAME "aud"
+			)
 			
 			# Set proper RPATH for the module
 			if(APPLE)
