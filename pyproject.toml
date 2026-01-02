@@ -103,6 +103,10 @@ before-all = [
     "apt-get update || true",
     "apt-get install -y build-essential cmake pkg-config nasm yasm libavcodec-dev libavformat-dev libavutil-dev libswresample-dev libsndfile1-dev libopenal-dev libsdl2-dev libfftw3-dev libjack-jackd2-dev libpulse-dev libx11-dev libxext-dev libxfixes-dev libxrandr-dev libxcursor-dev libxinerama-dev libegl1-mesa-dev libgl1-mesa-dev libsamplerate0-dev libpipewire-0.3-dev || true",
 ]
+environment = {
+    WITH_PULSEAUDIO = "ON",
+    WITH_JACK= "ON"
+}
 repair-wheel-command = "auditwheel repair -w {dest_dir} {wheel} --lib-sdir . || cp {wheel} {dest_dir}/"
 
 [tool.cibuildwheel.macos]
@@ -110,7 +114,10 @@ before-all = [
     "brew install ffmpeg libsndfile sdl2 fftw || true",
 ]
 repair-wheel-command = "delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel}"
-environment = {WITH_COREAUDIO = "ON"}
+environment = {
+    WITH_COREAUDIO = "ON",
+    MACOSX_DEPLOYMENT_TARGET= "15.0"
+}
 
 [tool.cibuildwheel.windows]
 before-all = [
