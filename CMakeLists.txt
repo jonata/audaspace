@@ -1233,7 +1233,7 @@ if(WITH_PYTHON)
 		install(FILES ${PYTHON_HDR} DESTINATION include/audaspace/python)
 	endif()
 
-	if(WITH_PYTHON_MODULE AND NOT DEFINED SKBUILD)
+	if(WITH_PYTHON_MODULE)
 		set(PYTHON_SOURCE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bindings/python)
 		configure_file(${PYTHON_SOURCE_DIRECTORY}/setup.py.in ${CMAKE_CURRENT_BINARY_DIR}/setup.py ESCAPE_QUOTES @ONLY)
 
@@ -1249,53 +1249,6 @@ if(WITH_PYTHON)
 		add_dependencies(pythonmodule audaspace)
 
 		install(CODE "EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} setup.py install --root=\$ENV{DESTDIR} --prefix=${CMAKE_INSTALL_PREFIX})")
-	endif()
-
-	# scikit-build-core Python extension module
-	if(DEFINED SKBUILD)
-		message(STATUS "Building Python extension module 'aud' for scikit-build-core")
-		
-		# Find Python for scikit-build
-		find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)
-		
-		# Create the Python extension module 'aud'
-		Python_add_library(aud MODULE ${PYTHON_SRC} ${PYTHON_HDR})
-		
-		# Link against audaspace library
-		target_link_libraries(aud PRIVATE audaspace)
-		
-		# Set include directories
-		target_include_directories(aud PRIVATE ${INCLUDE})
-		
-		# Module properties
-		set_target_properties(aud PROPERTIES
-			PREFIX ""
-			OUTPUT_NAME "aud"
-		)
-		
-		# Platform-specific RPATH for bundled libraries
-		if(APPLE)
-			set_target_properties(aud PROPERTIES
-				INSTALL_RPATH "@loader_path/aud.libs"
-				BUILD_WITH_INSTALL_RPATH ON
-			)
-		elseif(UNIX)
-			set_target_properties(aud PROPERTIES
-				INSTALL_RPATH "$ORIGIN/aud.libs"
-				BUILD_WITH_INSTALL_RPATH ON
-			)
-		endif()
-		
-		# Install extension module to wheel root
-		install(TARGETS aud LIBRARY DESTINATION .)
-		
-		# Install audaspace library to aud.libs for bundling
-		install(TARGETS audaspace
-			LIBRARY DESTINATION aud.libs
-			RUNTIME DESTINATION aud.libs
-		)
-		
-		message(STATUS "Python extension module 'aud' configured successfully")
 	endif()
 endif()
 
