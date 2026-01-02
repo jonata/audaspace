@@ -81,26 +81,32 @@ jobs:
         env:
           WITH_PULSEAUDIO: "ON"
           WITH_JACK: "ON"
+          CIBW_BUILD: "cp38-* cp39-* cp310-* cp311-* cp312-*"
+          CIBW_SKIP: "*-musllinux_*"
         run: |
-          python -m pip install -v --no-build-isolation .
-          python -m build --wheel --no-isolation
+          python -m pip install cibuildwheel
+          python -m cibuildwheel --output-dir dist
           
       - name: Build wheel (macOS)
         if: runner.os == 'macOS'
         env:
           WITH_COREAUDIO: "ON"
           MACOSX_DEPLOYMENT_TARGET: "15.0"
+          CIBW_BUILD: "cp38-* cp39-* cp310-* cp311-* cp312-*"
+          CIBW_SKIP: "*-musllinux_*"
         run: |
-          python -m pip install -v --no-build-isolation .
-          python -m build --wheel --no-isolation
+          python -m pip install cibuildwheel
+          python -m cibuildwheel --output-dir dist
 
       - name: Build wheel (Windows)
         if: runner.os == 'Windows'
         env:
           WITH_WASAPI: "ON"
+          CIBW_BUILD: "cp38-* cp39-* cp310-* cp311-* cp312-*"
+          CIBW_SKIP: "*-musllinux_*"
         run: |
-          python -m pip install -v --no-build-isolation .
-          python -m build --wheel --no-isolation
+          python -m pip install cibuildwheel
+          python -m cibuildwheel --output-dir dist
 
       - name: List wheel contents
         run: |
@@ -119,8 +125,18 @@ jobs:
                       info = z.getinfo(f)
                       print(f'  {f} ({info.file_size / 1024:.1f} KB)')
           "
-      - name: Testing wheel
+
+      - name: Testing wheel (Clean environment)
         run: |
+          # Create a clean venv for testing
+          pip uninstall -y audaspace scikit-build-core pybind11
+          python -m venv test_env
+          source test_env/bin/activate || . test_env/Scripts/activate
+          
+          # Install only the wheel (and numpy dependency)
+          pip install dist/audaspace-*.whl numpy
+          
+          # Test
           python -c "import aud,numpy as np; d=aud.Device(); t=np.linspace(0,0.1,4410,False); s=aud.Sound.buffer(np.sin(2*np.pi*440*t).astype(np.float32),44100); h=d.play(s); h.stop(); aud.HRTF(); seq=aud.Sequence(); seq.add(s,0,0,-1); assert any(n.startswith('CODEC_') for n in dir(aud)); print('audaspace wheel OK')"
 
       - name: Upload wheel artifact
