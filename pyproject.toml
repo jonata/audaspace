@@ -1,5 +1,5 @@
 [build-system]
-requires = ["scikit-build-core>=0.10", "pybind11", "numpy"]
+requires = ["scikit-build-core>=0.10", "pybind11>=2.11", "numpy>=1.19"]
 build-backend = "scikit_build_core.build"
 
 [project]
@@ -13,7 +13,7 @@ authors = [
 ]
 requires-python = ">=3.8"
 dependencies = ["numpy>=1.19.0"]
-keywords = ["audio", "sound", "3d-audio", "spatial-audio"]
+keywords = ["audio", "sound", "3d-audio", "spatial-audio", "ffmpeg"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
@@ -39,18 +39,14 @@ Repository = "https://github.com/audaspace/audaspace"
 Issues = "https://github.com/audaspace/audaspace/issues"
 
 [tool.scikit-build]
-cmake.verbose = false
+cmake.verbose = true
 cmake.build-type = "Release"
 minimum-version = "0.10"
 build-dir = "build/{wheel_tag}"
 wheel.packages = []
-wheel.py-api = "cp38"
-
-# Use custom install for the Python module
-install.strip = false
 
 [tool.scikit-build.cmake.define]
-# Core build settings
+# Disable non-essential components
 BUILD_DEMOS = "OFF"
 WITH_DOCS = "OFF"
 WITH_BINDING_DOCS = "OFF"
@@ -59,11 +55,12 @@ SEPARATE_C = "OFF"
 SHARED_LIBRARY = "ON"
 AUDASPACE_STANDALONE = "OFF"
 
-# Python settings - use the traditional setup.py method for now but install to wheel
+# Enable Python module with scikit-build
 WITH_PYTHON = "ON"
-WITH_PYTHON_MODULE = "ON"
+WITH_PYTHON_MODULE = "OFF"
+SKBUILD = "1"
 
-# Enable all audio backends with static linking
+# Enable audio backends (static linking)
 WITH_FFMPEG = "ON"
 WITH_LIBSNDFILE = "ON"
 WITH_OPENAL = "ON"
@@ -71,13 +68,13 @@ WITH_SDL = "ON"
 WITH_FFTW = "ON"
 USE_SDL2 = "ON"
 
-# Build plugins as static (embedded in the main library)
+# Disable plugins (embed everything statically)
 PLUGIN_FFMPEG = "OFF"
 PLUGIN_LIBSNDFILE = "OFF"
 PLUGIN_OPENAL = "OFF"
 PLUGIN_SDL = "OFF"
 
-# Platform-specific overrides
+# Platform-specific backends
 [[tool.scikit-build.overrides]]
 if.platform-system = "linux"
 cmake.define.WITH_JACK = "ON"
@@ -99,58 +96,22 @@ cmake.define.WITH_WASAPI = "ON"
 cmake.define.PLUGIN_WASAPI = "OFF"
 
 [tool.cibuildwheel]
-# Build for all platforms
 build = "cp38-* cp39-* cp310-* cp311-* cp312-* cp313-*"
 skip = "*-musllinux* pp*"
-
-# Test command to ensure the wheel works
 test-requires = ["numpy"]
-test-command = [
-    "python -c \"import aud; print('audaspace version:', aud.__version__ if hasattr(aud, '__version__') else '1.8.0'); d = aud.Device(); print('Device created successfully')\""
-]
+test-command = "python {project}/test_wheel.py"
 
 [tool.cibuildwheel.linux]
-# Use manylinux2014 for better compatibility
 manylinux-x86_64-image = "manylinux2014"
-manylinux-aarch64-image = "manylinux2014"
-
-# Install dependencies via yum in manylinux container
 before-all = [
     "yum install -y epel-release",
-    "yum install -y cmake3 wget tar",
-    # Install vcpkg for dependency management
-    "git clone https://github.com/Microsoft/vcpkg.git /opt/vcpkg || true",
-    "cd /opt/vcpkg && ./bootstrap-vcpkg.sh || true",
-    "export VCPKG_ROOT=/opt/vcpkg",
-    "/opt/vcpkg/vcpkg install ffmpeg[core,avcodec,avformat,avutil,swresample]:x64-linux libsndfile:x64-linux openal-soft:x64-linux sdl2:x64-linux fftw3:x64-linux || echo 'vcpkg install may have partial success'",
+    "yum install -y cmake3 pkg-config",
 ]
-
-environment = {CMAKE_PREFIX_PATH="/opt/vcpkg/installed/x64-linux", PKG_CONFIG_PATH="/opt/vcpkg/installed/x64-linux/lib/pkgconfig"}
-
-# Use auditwheel to bundle shared libraries
 repair-wheel-command = "auditwheel repair -w {dest_dir} {wheel}"
 
 [tool.cibuildwheel.macos]
-# macOS deployment target
 environment = {MACOSX_DEPLOYMENT_TARGET="11.0"}
-
-# Install dependencies via homebrew
-before-all = [
-    "brew install cmake ffmpeg libsndfile openal-soft sdl2 fftw pkg-config || true",
-]
-
-# Use delocate to bundle shared libraries
 repair-wheel-command = "delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel}"
 
 [tool.cibuildwheel.windows]
-# Install dependencies via vcpkg
-before-all = [
-    "git clone https://github.com/Microsoft/vcpkg.git C:\\vcpkg-build || exit 0",
-    "C:\\vcpkg-build\\bootstrap-vcpkg.bat || exit 0",
-    "C:\\vcpkg-build\\vcpkg.exe install ffmpeg[core,avcodec,avformat,avutil,swresample]:x64-windows libsndfile:x64-windows openal-soft:x64-windows sdl2:x64-windows fftw3:x64-windows --clean-after-build || echo vcpkg install may have partial success",
-]
-
-environment = {CMAKE_PREFIX_PATH="C:\\vcpkg-build\\installed\\x64-windows", CMAKE_TOOLCHAIN_FILE="C:\\vcpkg-build\\scripts\\buildsystems\\vcpkg.cmake"}
-
-# Use delvewheel to bundle DLLs
 repair-wheel-command = "delvewheel repair -w {dest_dir} {wheel}"
