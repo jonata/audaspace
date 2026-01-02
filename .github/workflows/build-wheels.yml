@@ -19,9 +19,9 @@ jobs:
         include:
           - os: ubuntu-24.04
             name: Linux
-          - os: macos-13
+          - os: macos-15-intel
             name: macOS Intel
-          - os: macos-14
+          - os: macos-15
             name: macOS ARM
           - os: windows-2022
             name: Windows
@@ -70,7 +70,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: cmd
         run: |
-          C:\vcpkg-ci\vcpkg.exe install ffmpeg[core,avcodec,avformat,avutil,swresample]:x64-windows libsndfile:x64-windows openal-soft:x64-windows sdl2:x64-windows fftw3:x64-windows
+          C:\vcpkg-ci\vcpkg.exe install ffmpeg[core,avcodec,avformat,swresample]:x64-windows libsndfile:x64-windows openal-soft:x64-windows sdl2:x64-windows fftw3:x64-windows
 
       - name: Set Windows environment
         if: runner.os == 'Windows'
