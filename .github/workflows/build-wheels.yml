@@ -92,7 +92,7 @@ jobs:
           WITH_JACK: "ON"
         run: |
           python -m build --wheel --no-isolation
-          auditwheel repair dist/*.whl -w dist/ --plat manylinux_2_28_x86_64
+          auditwheel repair dist/*.whl -w dist/
           rm dist/*-linux_*.whl
           
       - name: Build wheel (macOS)
