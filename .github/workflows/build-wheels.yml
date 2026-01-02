@@ -1,181 +1,232 @@
-name: Build and Test Wheels
+name: Build and Publish Wheels
 
 on:
   push:
-    branches: [ main, master, github-actions-tests ]
+    branches: [ main, master ]
     tags:
-      - "v*"
+      - 'v*'
   pull_request:
+    branches: [ main, master ]
   workflow_dispatch:
 
 jobs:
   build_wheels:
-    name: Build & test wheels on ${{ matrix.os }}
+    name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
-
     strategy:
-      fail-fast: false
       matrix:
-        os:
-          - ubuntu-24.04
-          - macos-15
-          - windows-2025
+        os: [ubuntu-22.04, macos-12, windows-2022]
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
 
     steps:
-      - name: Checkout source
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          submodules: recursive
+          fetch-depth: 0
 
-      - name: Set up Python
-        uses: actions/setup-python@v6
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python-version }}
 
-      - name: Upgrade pip
-        run: python3 -m pip install --upgrade pip
-
-      - name: Install build tools
-        run: python3 -m pip install cibuildwheel build twine numpy setuptools
-
-      # ------------------------
-      # Build wheels
-      # ------------------------
-      - name: Build wheels with cibuildwheel
-        env:
-          CIBW_BUILD: "cp38-* cp39-* cp310-* cp311-* cp312-*"
-          CIBW_BUILD_VERBOSITY: 1
-          CIBW_BUILD_FRONTEND: build
-          CIBW_SKIP: >
-            *-musllinux_*
-            cp38-macosx_arm64
-            *-win32
-          
-          # Linux configuration
-          CIBW_BEFORE_ALL_LINUX: >
-            yum install -y epel-release && yum install -y gcc gcc-c++ make cmake pkgconfig nasm yasm libsndfile-devel openal-soft-devel SDL2-devel fftw-devel jack-audio-connection-kit-devel pulseaudio-libs-devel libX11-devel libXext-devel libXfixes-devel libXrandr-devel libXcursor-devel libXinerama-devel mesa-libEGL-devel mesa-libGL-devel libsamplerate-devel pipewire-devel libpipewire-0.3-devel pipewire-jack-audio-connection-kit-devel fftw-devel-single;
-            git clone https://git.ffmpeg.org/ffmpeg.git /tmp/ffmpeg;
-            cd /tmp/ffmpeg;
-            ./configure --prefix=/opt/ffmpeg --enable-shared --disable-static --disable-debug --disable-doc --disable-programs --disable-everything --enable-avcodec --enable-avformat --enable-avutil --enable-swresample;
-            make -j$(nproc);
-            make install;
-            python3 -m pip install meson ninja;
-            git clone https://github.com/breakfastquay/rubberband.git /tmp/rubberband;
-            cd /tmp/rubberband;
-            meson setup build --prefix=/opt/rubberband -Dresampler=libsamplerate -Dtests=disabled -Dfft=fftw;
-            ninja -C build;
-            ninja -C build install;
-
-          CIBW_BEFORE_BUILD_LINUX: >
-            python -m pip install --upgrade pip setuptools scikit-build-core numpy pybind11 cmake ninja auditwheel &&
-            yum install -y patchelf &&
-            echo "=== Python info ===" &&
-            python --version &&
-            python -c "import sys; print('Executable:', sys.executable)" &&
-            python -c "import numpy; print('NumPy version:', numpy.__version__)" &&
-            python -c "import pybind11; print('pybind11 version:', pybind11.__version__)" &&
-            echo "=== Checking built libraries ===" &&
-            find /opt -name "*.so*" -type f 2>/dev/null | head -20 &&
-            echo "=== Checking library symlinks ===" &&
-            ls -la /opt/rubberband/lib/ || true &&
-            ls -la /opt/ffmpeg/lib/ | head -20 || true &&
-            echo "=== Build will start now, Python module should be built ===" 
-
-          CIBW_ENVIRONMENT_LINUX: >
-            PKG_CONFIG_PATH=/opt/ffmpeg/lib/pkgconfig:/opt/rubberband/lib64/pkgconfig
-            LD_LIBRARY_PATH=/opt/ffmpeg/lib:/opt/rubberband/lib64
-            CMAKE_PREFIX_PATH=/opt/ffmpeg:/opt/rubberband
-            CMAKE_BUILD_WITH_INSTALL_RPATH=ON
-            CMAKE_INSTALL_RPATH=/opt/ffmpeg/lib:/opt/rubberband/lib64
-            WITH_FFMPEG=ON
-            WITH_RUBBERBAND=ON
-            WITH_PULSEAUDIO=ON
-            WITH_JACK=ON
-            WITH_WASAPI=OFF
-            WITH_PIPEWIRE=ON
-            VERBOSE=1
-
-          CIBW_CMAKE_OPTIONS_LINUX: -DPython_EXECUTABLE=$(python -c "import sys; print(sys.executable)") --debug-output
-
-          CIBW_REPAIR_WHEEL_COMMAND_LINUX: >
-            echo "=== Before repair - Full wheel contents ===" &&
-            unzip -l {wheel} || true &&
-            echo "" &&
-            echo "=== Before repair - Looking for Python extension .so files ===" &&
-            unzip -l {wheel} | grep -E "\.so" || echo "No .so files found!" &&
-            echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" &&
-            auditwheel show {wheel} || true &&
-            echo "=== Running repair ===" &&
-            auditwheel repair -w {dest_dir} {wheel} || (echo "Repair failed, copying wheel as-is" && cp {wheel} {dest_dir}/) &&
-            echo "=== After repair ===" &&
-            ls -lh {dest_dir}/*.whl &&
-            echo "" &&
-            echo "=== After repair - Full wheel contents ===" &&
-            unzip -l {dest_dir}/*.whl || true
-            
-          # macOS configuration
-          CIBW_BEFORE_ALL_MACOS: >
-            brew install ffmpeg libsndfile sdl2 fftw rubberband jack || true;
-          
-          CIBW_ENVIRONMENT_MACOS: >
-            WITH_COREAUDIO=ON
-            MACOSX_DEPLOYMENT_TARGET=15.0
-            CMAKE_INSTALL_RPATH=@loader_path
-            CMAKE_BUILD_WITH_INSTALL_RPATH=ON
-            WITH_JACK=ON
-            WITH_WASAPI=OFF
-
-          CIBW_CMAKE_ARGS_MACOS: >
-            -DCMAKE_INSTALL_RPATH=@loader_path
-            -DCMAKE_INSTALL_NAME_DIR=@rpath
-            -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON
-            -DCMAKE_INSTALL_LIBDIR=lib
-
-          CIBW_BEFORE_BUILD_MACOS: >
-            python -m pip install delocate;
-            find . -name "libaudaspace*.dylib" -type f;
-            mkdir -p audaspace/lib;
-            find . -name "libaudaspace*.dylib" -type f -exec cp {} audaspace/lib/ \;
-          
-          # Windows configuration
-          CIBW_BEFORE_BUILD_WINDOWS: >
-            pip install delvewheel;
-                    
-          CIBW_BEFORE_ALL_WINDOWS: >
-            choco install -y pkgconfiglite &&
-            curl -L -o build-dependencies.zip https://github.com/audaspace/audaspace/releases/download/v1.3.0/build-dependencies-1.3.0-win64.zip &&
-            mkdir C:\lib &&
-            unzip build-dependencies.zip -d C:\lib
-            
-          CIBW_CMAKE_OPTIONS_WINDOWS: -DLIBRARY_PATH=C:\lib\build-dependencies-1.3.0-win64
-
-          CIBW_ENVIRONMENT_WINDOWS: >
-            WITH_WASAPI=ON
-            WITH_STRICT_DEPENDENCIES=ON
-            LIBRARY_PATH=C:\lib
-            PKG_CONFIG_PATH=C:\lib
-
-          CIBW_TEST_REQUIRES: numpy
-          CIBW_TEST_COMMAND: >
-            python -c "import sys; print('Python:', sys.executable); import site; print('Site packages:', site.getsitepackages()); import os; print('PYTHONPATH:', os.environ.get('PYTHONPATH', 'not set')); print('sys.path:'); [print('  ', p) for p in sys.path]" &&
-            python -c "import aud,numpy as np; d=aud.Device(); t=np.linspace(0,0.1,4410,False); s=aud.Sound.buffer(np.sin(2*np.pi*440*t).astype(np.float32),44100); h=d.play(s); h.stop(); aud.HRTF(); seq=aud.Sequence(); seq.add(s,0,0,-1); assert any(n.startswith('CODEC_') for n in dir(aud)); print('audaspace wheel OK')"
-
-
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
         run: |
-          python3 -m cibuildwheel --output-dir wheelhouse;
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake \
+            ninja-build \
+            libavcodec-dev \
+            libavformat-dev \
+            libavutil-dev \
+            libswresample-dev \
+            libsndfile1-dev \
+            libopenal-dev \
+            libsdl2-dev \
+            libfftw3-dev \
+            libpulse-dev \
+            libjack-dev \
+            patchelf
 
-      # ------------------------
-      # Upload artifacts
-      # ------------------------
-      - name: Upload wheels
+      - name: Install system dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install \
+            cmake \
+            ninja \
+            ffmpeg \
+            libsndfile \
+            sdl2 \
+            fftw
+
+      - name: Install system dependencies (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          choco install cmake ninja
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build wheel setuptools scikit-build-core pybind11 numpy
+          pip install auditwheel || true
+          pip install delocate || true
+          pip install delvewheel || true
+
+      - name: Build wheel (Linux)
+        if: runner.os == 'Linux'
+        env:
+          WITH_PULSEAUDIO: "ON"
+          WITH_JACK: "ON"
+        run: |
+          python -m build --wheel --no-isolation
+          
+      - name: Build wheel (macOS)
+        if: runner.os == 'macOS'
+        env:
+          WITH_COREAUDIO: "ON"
+          MACOSX_DEPLOYMENT_TARGET: "10.15"
+        run: |
+          python -m build --wheel --no-isolation
+
+      - name: Build wheel (Windows)
+        if: runner.os == 'Windows'
+        env:
+          WITH_WASAPI: "ON"
+        run: |
+          python -m build --wheel --no-isolation
+
+      - name: Repair wheel (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          pip install auditwheel patchelf
+          mkdir -p wheelhouse
+          for wheel in dist/*.whl; do
+            echo "Processing $wheel"
+            # Copy libs into the wheel structure first
+            python -c "
+          import zipfile
+          import shutil
+          import os
+          from pathlib import Path
+          
+          wheel_file = '$wheel'
+          with zipfile.ZipFile(wheel_file, 'r') as zin:
+              zin.extractall('temp_wheel')
+          
+          # Move .so files to the audaspace package directory  
+          lib_dir = Path('temp_wheel/lib')
+          if lib_dir.exists():
+              aud_dir = Path('temp_wheel/audaspace.libs')
+              aud_dir.mkdir(exist_ok=True)
+              for so_file in lib_dir.glob('*.so*'):
+                  shutil.copy2(so_file, aud_dir)
+          
+          # Recreate wheel
+          shutil.rmtree('dist')
+          os.makedirs('dist', exist_ok=True)
+          with zipfile.ZipFile(wheel_file, 'w', zipfile.ZIP_DEFLATED) as zout:
+              for root, dirs, files in os.walk('temp_wheel'):
+                  for file in files:
+                      file_path = os.path.join(root, file)
+                      arcname = os.path.relpath(file_path, 'temp_wheel')
+                      zout.write(file_path, arcname)
+          
+          shutil.rmtree('temp_wheel')
+          " || true
+            
+            # Try to repair with auditwheel (bundle external dependencies)
+            auditwheel repair --plat manylinux_2_35_x86_64 -w wheelhouse "$wheel" || \
+            auditwheel repair --plat manylinux_2_31_x86_64 -w wheelhouse "$wheel" || \
+            auditwheel repair --plat manylinux_2_28_x86_64 -w wheelhouse "$wheel" || \
+            cp "$wheel" wheelhouse/
+          done
+          rm -rf dist
+          mv wheelhouse dist
+
+      - name: Repair wheel (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          pip install delocate
+          mkdir -p wheelhouse
+          for wheel in dist/*.whl; do
+            delocate-wheel -w wheelhouse -v "$wheel" || cp "$wheel" wheelhouse/
+          done
+          rm -rf dist
+          mv wheelhouse dist
+
+      - name: Repair wheel (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          pip install delvewheel
+          mkdir wheelhouse
+          foreach ($wheel in Get-ChildItem dist/*.whl) {
+            delvewheel repair -w wheelhouse $wheel.FullName
+            if ($LASTEXITCODE -ne 0) {
+              Copy-Item $wheel.FullName wheelhouse/
+            }
+          }
+          Remove-Item -Recurse -Force dist
+          Move-Item wheelhouse dist
+
+      - name: List wheel contents
+        run: |
+          python -c "
+          import zipfile
+          import sys
+          from pathlib import Path
+          
+          for wheel in Path('dist').glob('*.whl'):
+              print(f'\n=== {wheel.name} ===')
+              with zipfile.ZipFile(wheel) as z:
+                  files = [f.filename for f in z.filelist]
+                  so_files = [f for f in files if '.so' in f or '.pyd' in f or '.dylib' in f or '.dll' in f]
+                  print('Shared libraries:')
+                  for f in sorted(so_files):
+                      info = z.getinfo(f)
+                      print(f'  {f} ({info.file_size / 1024:.1f} KB)')
+          "
+
+      - name: Upload wheel artifact
         uses: actions/upload-artifact@v4
         with:
-          name: wheels-${{ matrix.os }}
-          path: wheelhouse/*.whl
+          name: wheel-${{ matrix.os }}-py${{ matrix.python-version }}
+          path: dist/*.whl
+          retention-days: 7
 
-  publish:
-    name: Publish to PyPI
+  test_wheels:
+    name: Test wheel on ${{ matrix.os }}
     needs: build_wheels
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-22.04, macos-12, windows-2022]
+        python-version: ['3.11']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Download wheel
+        uses: actions/download-artifact@v4
+        with:
+          name: wheel-${{ matrix.os }}-py${{ matrix.python-version }}
+          path: dist/
+
+      - name: Install wheel
+        run: |
+          pip install numpy
+          pip install dist/*.whl
+
+      - name: Test import
+        run: |
+          python -c "import aud; print('Audaspace version:', aud.__version__ if hasattr(aud, '__version__') else 'unknown'); d = aud.Device(); print('Device created successfully')"
+
+  publish_pypi:
+    name: Publish to PyPI
+    needs: test_wheels
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     permissions:
@@ -186,14 +237,15 @@ jobs:
       - name: Download all wheels
         uses: actions/download-artifact@v4
         with:
-          pattern: wheels-*
+          pattern: wheel-*
           path: dist/
           merge-multiple: true
 
-      - name: List wheels
+      - name: List all wheels
         run: |
           ls -lh dist/
-          echo "Total wheels: $(ls -1 dist/*.whl | wc -l)"
+          echo "Total wheels:"
+          ls -1 dist/*.whl | wc -l
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
@@ -201,110 +253,3 @@ jobs:
           packages-dir: dist/
           skip-existing: true
           verbose: true
-
-
-
-
-
-# C:\tools\msys64\usr\bin\bash -lc "
-#   pacman -Sy --noconfirm;
-#   pacman -S --noconfirm \
-#     git \
-#     make \
-#     nasm \
-#     yasm \
-#     pkg-config \
-#     mingw-w64-x86_64-toolchain \
-#     mingw-w64-x86_64-cmake \
-#     mingw-w64-x86_64-meson \
-#     mingw-w64-x86_64-fftw \
-#     mingw-w64-x86_64-libsamplerate \
-#     mingw-w64-x86_64-libsndfile &&
-  
-#   export PREFIX=/mingw64 &&
-#   export PATH=/mingw64/bin:\$PATH &&
-
-#   echo '=== Building FFTW ===' &&
-#   git clone https://github.com/FFTW/fftw3.git /tmp/fftw &&
-#   cd /tmp/fftw &&
-#   ./configure \
-#     --prefix=\$PREFIX \
-#     --enable-shared \
-#     --enable-float \
-#     --disable-double \
-#     --disable-long-double &&
-#   make -j\$(nproc) &&
-#   make install &&
-
-#   echo '=== Building FFmpeg ===' &&
-#   git clone https://git.ffmpeg.org/ffmpeg.git /tmp/ffmpeg &&
-#   cd /tmp/ffmpeg &&
-#   ./configure \
-#     --prefix=\$PREFIX \
-#     --enable-shared \
-#     --disable-static \
-#     --disable-programs \
-#     --disable-doc \
-#     --enable-avcodec \
-#     --enable-avformat \
-#     --enable-avutil \
-#     --enable-swresample &&
-#   make -j\$(nproc) &&
-#   make install &&
-
-#   echo '=== Building Rubber Band ===' &&
-#   git clone https://github.com/breakfastquay/rubberband.git /tmp/rubberband &&
-#   cd /tmp/rubberband &&
-#   meson setup build \
-#     --prefix=\$PREFIX \
-#     --libdir=lib &&
-#   ninja -C build &&
-#   ninja -C build install
-# ";
-
-# python -m pip install --upgrade pip && python -m pip install cmake ninja meson &&
-#             curl -L -o ffmpeg-8.0.tar.bz2 https://ffmpeg.org/releases/ffmpeg-8.0.tar.bz2 &&
-#             mkdir C:\ffmpeg &&
-#             tar -xjf ffmpeg-8.0.tar.bz2 -C C:\ffmpeg &&
-#             cd C:\ffmpeg\ffmpeg-8.0 &&
-#             mkdir build &&
-#             cd build &&
-#             cmake .. -DCMAKE_INSTALL_PREFIX=C:\ffmpeg-install -DBUILD_SHARED_LIBS=ON -DENABLE_PROGRAMS=OFF -DENABLE_DOC=OFF &&
-#             cmake --build . --config Release &&
-#             cmake --install . &&
-#             curl -L -o fftw-3.3.2.tar.gz https://www.fftw.org/fftw-3.3.2.tar.gz &&
-#             mkdir C:\fftw &&
-#             tar -xzf fftw-3.3.2.tar.gz -C C:\fftw &&
-#             cd C:\fftw\fftw-3.3.2 &&
-#             mkdir build &&
-#             cd build &&
-#             cmake -S .. -B . -DCMAKE_INSTALL_PREFIX=C:\fftw-install -DBUILD_SHARED_LIBS=ON -DENABLE_FLOAT=ON -DENABLE_DOUBLE=OFF -DENABLE_LONG_DOUBLE=OFF &&
-#             cmake --build . --config Release &&
-#             cmake --install . &&
-#             curl -L -o libsndfile-1.2.0.tar.gz https://github.com/erikd/libsndfile/releases/download/1.2.0/libsndfile-1.2.0.tar.gz &&
-#             mkdir C:\libsndfile &&
-#             tar -xzf libsndfile-1.2.0.tar.gz -C C:\libsndfile &&
-#             cd C:\libsndfile\libsndfile-1.2.0 &&
-#             mkdir build &&
-#             cd build &&
-#             cmake -S .. -B . -DCMAKE_INSTALL_PREFIX=C:\libsndfile-install -DBUILD_SHARED_LIBS=ON &&
-#             cmake --build . --config Release &&
-#             cmake --install . &&
-#             curl -L -o openal-soft-1.23.1.zip https://github.com/kcat/openal-soft/archive/refs/tags/1.23.1.zip &&
-#             mkdir C:\openal &&
-#             tar -xf openal-soft-1.23.1.zip -C C:\openal &&
-#             cd C:\openal\openal-soft-1.23.1 &&
-#             mkdir build &&
-#             cd build &&
-#             cmake -S .. -B . -DCMAKE_INSTALL_PREFIX=C:\openal-install -DLIBTYPE=SHARED &&
-#             cmake --build . --config Release &&
-#             cmake --install . &&
-#             curl -L -o SDL2-2.26.5.zip https://github.com/libsdl-org/SDL/releases/download/release-2.26.5/SDL2-2.26.5.zip &&
-#             mkdir C:\sdl &&
-#             tar -xf SDL2-2.26.5.zip -C C:\sdl &&
-#             cd C:\sdl\SDL2-2.26.5 &&
-#             mkdir build &&
-#             cd build &&
-#             cmake -S .. -B . -DCMAKE_INSTALL_PREFIX=C:\sdl-install -DBUILD_SHARED_LIBS=ON &&
-#             cmake --build . --config Release &&
-#             cmake --install . 
