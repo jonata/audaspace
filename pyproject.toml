@@ -48,7 +48,7 @@ wheel.expand-macos-universal-tags = true
 
 [tool.scikit-build.cmake.define]
 BUILD_DEMOS = "OFF"
-SHARED_LIBRARY = "OFF"
+SHARED_LIBRARY = "ON"
 WITH_C = "ON"
 WITH_DOCS = "OFF"
 WITH_PYTHON = "ON"
