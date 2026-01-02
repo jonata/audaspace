@@ -2,7 +2,7 @@ name: Build and Publish Wheels
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main, master, github-actions-tests ]
     tags:
       - 'v*'
   pull_request:
