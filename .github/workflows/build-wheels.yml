@@ -97,7 +97,7 @@ jobs:
         if: runner.os == 'macOS'
         env:
           WITH_COREAUDIO: "ON"
-          MACOSX_DEPLOYMENT_TARGET: "10.15"
+          MACOSX_DEPLOYMENT_TARGET: "15.0"
         run: |
           python -m build --wheel --no-isolation
 
