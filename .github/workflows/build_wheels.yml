@@ -5,7 +5,7 @@ on:
   push:
     branches:
       - github-actions-tests
-  pull_request:
+  pull_request: 
 
 jobs:
   build_wheels:
