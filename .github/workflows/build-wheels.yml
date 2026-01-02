@@ -91,7 +91,7 @@ jobs:
           WITH_JACK: "ON"
         run: |
           python -m build --wheel --no-isolation
-          auditwheel repair dist/*.whl --plat linux_x86_64 -w dist/
+          auditwheel repair dist/*.whl -w dist/
           rm dist/*-linux_*.whl
           
       - name: Build wheel (macOS)
