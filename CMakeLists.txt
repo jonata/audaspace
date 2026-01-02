@@ -474,7 +474,29 @@ endif()
 # FFMPEG
 if(WITH_FFMPEG)
 	if(AUDASPACE_STANDALONE)
-		find_package(FFMPEG ${PACKAGE_OPTION})
+		# On Windows with vcpkg, try CMake config first
+		if(WIN32 AND DEFINED CMAKE_TOOLCHAIN_FILE)
+			find_package(FFMPEG QUIET CONFIG)
+			if(NOT FFMPEG_FOUND)
+				# Try finding individual components
+				find_library(AVCODEC_LIBRARY NAMES avcodec)
+				find_library(AVFORMAT_LIBRARY NAMES avformat)
+				find_library(AVUTIL_LIBRARY NAMES avutil)
+				find_library(SWRESAMPLE_LIBRARY NAMES swresample)
+				find_path(FFMPEG_INCLUDE_DIR libavcodec/avcodec.h)
+				
+				if(AVCODEC_LIBRARY AND AVFORMAT_LIBRARY AND AVUTIL_LIBRARY AND FFMPEG_INCLUDE_DIR)
+					set(FFMPEG_FOUND TRUE)
+					set(FFMPEG_LIBRARIES ${AVCODEC_LIBRARY} ${AVFORMAT_LIBRARY} ${AVUTIL_LIBRARY})
+					if(SWRESAMPLE_LIBRARY)
+						list(APPEND FFMPEG_LIBRARIES ${SWRESAMPLE_LIBRARY})
+					endif()
+					set(FFMPEG_INCLUDE_DIRS ${FFMPEG_INCLUDE_DIR})
+				endif()
+			endif()
+		else()
+			find_package(FFMPEG ${PACKAGE_OPTION})
+		endif()
 	endif()
 
 	if(FFMPEG_FOUND)
@@ -1300,16 +1322,26 @@ if(WITH_PYTHON)
 				set_target_properties(aud PROPERTIES
 					INSTALL_RPATH "@loader_path;@loader_path/.dylibs"
 					BUILD_WITH_INSTALL_RPATH TRUE
+					SUFFIX ".so"
 				)
 			elseif(UNIX)
 				set_target_properties(aud PROPERTIES
 					INSTALL_RPATH "\$ORIGIN;\$ORIGIN/.dylibs"
 					BUILD_WITH_INSTALL_RPATH TRUE
+					SUFFIX ".so"
+				)
+			elseif(WIN32)
+				set_target_properties(aud PROPERTIES
+					SUFFIX ".pyd"
 				)
 			endif()
 			
 			# Install Python module - scikit-build-core will handle the location
-			install(TARGETS aud LIBRARY DESTINATION .)
+			# Install to root of package for direct import as 'import aud'
+			install(TARGETS aud 
+				LIBRARY DESTINATION .
+				RUNTIME DESTINATION .
+			)
 			# Install shared libraries next to the module
 			install(TARGETS audaspace 
 				LIBRARY DESTINATION .
