@@ -48,7 +48,7 @@ audaspace = Extension(
                       'aud',
                       include_dirs = ['@CMAKE_CURRENT_BINARY_DIR@', os.path.join(source_directory, '../../include'), numpy.get_include()] + (['@FFTW_INCLUDE_DIR@'] if '@WITH_FFTW@' == 'ON' else []),
                       libraries = ['audaspace'],
-                      library_dirs = ['.', 'Release', 'Debug', '@CMAKE_CURRENT_BINARY_DIR@'],
+                      library_dirs = ['.', 'Release', 'Debug'],
                       language = 'c++',
                       extra_compile_args = extra_args,
                       define_macros = macros,

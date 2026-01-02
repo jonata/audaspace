@@ -358,15 +358,7 @@ if(AUDASPACE_STANDALONE)
 	endif()
 
 	if(APPLE AND NOT CMAKE_OSX_DEPLOYMENT_TARGET)
-		set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15" CACHE STRING "" FORCE)
-	endif()
-	
-	# Support for Apple Silicon (arm64) and universal binaries
-	if(APPLE)
-		if(NOT CMAKE_OSX_ARCHITECTURES)
-			# Allow building for both x86_64 and arm64
-			set(CMAKE_OSX_ARCHITECTURES "${CMAKE_SYSTEM_PROCESSOR}" CACHE STRING "Target architectures" FORCE)
-		endif()
+		set(CMAKE_OSX_DEPLOYMENT_TARGET "10.9" CACHE STRING "" FORCE)
 	endif()
 endif()
 
@@ -474,29 +466,7 @@ endif()
 # FFMPEG
 if(WITH_FFMPEG)
 	if(AUDASPACE_STANDALONE)
-		# On Windows with vcpkg, try CMake config first
-		if(WIN32 AND DEFINED CMAKE_TOOLCHAIN_FILE)
-			find_package(FFMPEG QUIET CONFIG)
-			if(NOT FFMPEG_FOUND)
-				# Try finding individual components
-				find_library(AVCODEC_LIBRARY NAMES avcodec)
-				find_library(AVFORMAT_LIBRARY NAMES avformat)
-				find_library(AVUTIL_LIBRARY NAMES avutil)
-				find_library(SWRESAMPLE_LIBRARY NAMES swresample)
-				find_path(FFMPEG_INCLUDE_DIR libavcodec/avcodec.h)
-				
-				if(AVCODEC_LIBRARY AND AVFORMAT_LIBRARY AND AVUTIL_LIBRARY AND FFMPEG_INCLUDE_DIR)
-					set(FFMPEG_FOUND TRUE)
-					set(FFMPEG_LIBRARIES ${AVCODEC_LIBRARY} ${AVFORMAT_LIBRARY} ${AVUTIL_LIBRARY})
-					if(SWRESAMPLE_LIBRARY)
-						list(APPEND FFMPEG_LIBRARIES ${SWRESAMPLE_LIBRARY})
-					endif()
-					set(FFMPEG_INCLUDE_DIRS ${FFMPEG_INCLUDE_DIR})
-				endif()
-			endif()
-		else()
-			find_package(FFMPEG ${PACKAGE_OPTION})
-		endif()
+		find_package(FFMPEG ${PACKAGE_OPTION})
 	endif()
 
 	if(FFMPEG_FOUND)
@@ -994,10 +964,6 @@ add_library(audaspace ${LIBRARY_TYPE} ${SRC} ${HDR})
 target_link_libraries(audaspace ${LIBRARIES})
 set_target_properties(audaspace PROPERTIES SOVERSION ${AUDASPACE_VERSION})
 
-if(APPLE)
-	set_target_properties(audaspace PROPERTIES INSTALL_NAME_DIR "@rpath")
-endif()
-
 if(AUDASPACE_STANDALONE)
 	install(TARGETS audaspace
 		RUNTIME DESTINATION ${BIN_DESTINATION}
@@ -1253,141 +1219,36 @@ if(WITH_PYTHON)
 			)
 	endif()
 
-	# Only build audaspace-py library if NOT using scikit-build-core
-	# When using scikit-build-core, we build the aud module directly
-	if(NOT DEFINED SKBUILD)
-		add_library(audaspace-py ${LIBRARY_TYPE} ${PYTHON_SRC} ${PYTHON_HDR})
-		target_link_libraries(audaspace-py audaspace ${PYTHON_LIBRARIES})
-		set_target_properties(audaspace-py PROPERTIES SOVERSION ${AUDASPACE_VERSION})
+	add_library(audaspace-py ${LIBRARY_TYPE} ${PYTHON_SRC} ${PYTHON_HDR})
+	target_link_libraries(audaspace-py audaspace ${PYTHON_LIBRARIES})
+	set_target_properties(audaspace-py PROPERTIES SOVERSION ${AUDASPACE_VERSION})
 
-		if(APPLE)
-			set_target_properties(audaspace-py PROPERTIES INSTALL_NAME_DIR "@rpath")
-		endif()
+	if(AUDASPACE_STANDALONE)
+		install(TARGETS audaspace-py
+			RUNTIME DESTINATION ${BIN_DESTINATION}
+			LIBRARY DESTINATION ${LIB_DESTINATION}
+			ARCHIVE DESTINATION ${LIB_DESTINATION}
+		)
 
-		if(AUDASPACE_STANDALONE)
-			install(TARGETS audaspace-py
-				RUNTIME DESTINATION ${BIN_DESTINATION}
-				LIBRARY DESTINATION ${LIB_DESTINATION}
-				ARCHIVE DESTINATION ${LIB_DESTINATION}
-			)
-
-			install(FILES ${PYTHON_HDR} DESTINATION include/audaspace/python)
-		endif()
+		install(FILES ${PYTHON_HDR} DESTINATION include/audaspace/python)
 	endif()
 
 	if(WITH_PYTHON_MODULE)
 		set(PYTHON_SOURCE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bindings/python)
 		configure_file(${PYTHON_SOURCE_DIRECTORY}/setup.py.in ${CMAKE_CURRENT_BINARY_DIR}/setup.py ESCAPE_QUOTES @ONLY)
 
-		# Check if we're building with scikit-build-core
-		if(DEFINED SKBUILD)
-			# scikit-build-core: Build Python extension module directly
-			if(DEFINED Python_INCLUDE_DIRS)
-				set(PYTHON_INCLUDE_DIRS ${Python_INCLUDE_DIRS})
-			endif()
-			if(DEFINED Python_EXECUTABLE)
-				set(PYTHON_EXECUTABLE ${Python_EXECUTABLE})
-			endif()
-			
-			find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)
-			
-			# Find NumPy headers
-			execute_process(
-				COMMAND "${Python_EXECUTABLE}" -c "import numpy; print(numpy.get_include())"
-				OUTPUT_VARIABLE NUMPY_INCLUDE_DIR
-				OUTPUT_STRIP_TRAILING_WHITESPACE
-				ERROR_QUIET
-			)
-			
-			if(NOT NUMPY_INCLUDE_DIR)
-				message(FATAL_ERROR "NumPy not found. Please install numpy: pip install numpy")
-			endif()
-			
-			# Create the Python extension module
-			Python_add_library(aud MODULE ${PYTHON_SRC} ${PYTHON_HDR})
-			target_link_libraries(aud PRIVATE audaspace)
-			target_include_directories(aud PRIVATE 
-				${CMAKE_CURRENT_BINARY_DIR}
-				${CMAKE_CURRENT_SOURCE_DIR}/include
-				${PYTHON_INCLUDE_DIRS}
-				${NUMPY_INCLUDE_DIR}
-			)
-			
-			# Add compile definitions
-			if(WITH_FFTW)
-				target_compile_definitions(aud PRIVATE WITH_CONVOLUTION)
-			endif()
-			if(WITH_RUBBERBAND)
-				target_compile_definitions(aud PRIVATE WITH_RUBBERBAND)
-			endif()
-			
-			# Set module properties
-			set_target_properties(aud PROPERTIES
-				PREFIX ""
-				OUTPUT_NAME "aud"
-			)
-			
-			# Set proper RPATH for the module
-			if(APPLE)
-				set_target_properties(aud PROPERTIES
-					INSTALL_RPATH "@loader_path;@loader_path/.dylibs"
-					BUILD_WITH_INSTALL_RPATH TRUE
-					SUFFIX ".so"
-				)
-			elseif(UNIX)
-				set_target_properties(aud PROPERTIES
-					INSTALL_RPATH "\$ORIGIN;\$ORIGIN/.dylibs"
-					BUILD_WITH_INSTALL_RPATH TRUE
-					SUFFIX ".so"
-				)
-			elseif(WIN32)
-				set_target_properties(aud PROPERTIES
-					SUFFIX ".pyd"
-				)
-			endif()
-			
-			# Install Python module - scikit-build-core will handle the location
-			# Install to root of package for direct import as 'import aud'
-			install(TARGETS aud 
-				LIBRARY DESTINATION .
-				RUNTIME DESTINATION .
-			)
-			# Install shared libraries next to the module
-			install(TARGETS audaspace 
-				LIBRARY DESTINATION .
-				RUNTIME DESTINATION .
-			)
+		if(APPLE)
+			add_custom_command(OUTPUT build COMMAND MACOSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET} ${PYTHON_EXECUTABLE} setup.py build DEPENDS ${PYTHON_SRC} ${PYTHON_HDR} setup.py)
+		elseif(WIN32)
+			set(ENV{VS100COMNTOOLS} $ENV{VS120COMNTOOLS})
+			add_custom_command(OUTPUT build COMMAND ${PYTHON_EXECUTABLE} setup.py build DEPENDS ${PYTHON_SRC} ${PYTHON_HDR} setup.py)
 		else()
-			# Traditional setup.py build
-			add_custom_command(OUTPUT build COMMAND ${PYTHON_EXECUTABLE} setup.py build_ext --inplace && ${CMAKE_COMMAND} -E touch build DEPENDS ${PYTHON_SRC} ${PYTHON_HDR} setup.py)
-			add_custom_target(pythonmodule ALL DEPENDS build SOURCES ${PYTHON_SOURCE_DIRECTORY}/setup.py.in ${PYTHON_SRC} ${PYTHON_HDR})
-			add_dependencies(pythonmodule audaspace)
-
-			install(CODE "
-				execute_process(COMMAND ${CMAKE_COMMAND} --build ${CMAKE_CURRENT_BINARY_DIR} --target pythonmodule)
-				execute_process(COMMAND find ${CMAKE_CURRENT_BINARY_DIR} -name \"*aud*.so\" -exec cp {} ${CMAKE_INSTALL_PREFIX} \;
-				                ERROR_QUIET)
-				
-				file(GLOB MODULE_FILE \"${CMAKE_INSTALL_PREFIX}/*aud*.so\")
-				
-				if(MODULE_FILE)
-
-					if(APPLE)
-						execute_process(COMMAND install_name_tool -add_rpath @loader_path/lib \${MODULE_FILE})
-					elseif(UNIX)
-						execute_process(COMMAND patchelf --set-rpath \"\\\$ORIGIN/lib\" \"\${MODULE_FILE}\" ERROR_QUIET)
-					endif()
-					
-					if(APPLE)
-						file(GLOB LIB_FILES \"\${CMAKE_INSTALL_PREFIX}/lib/libaudaspace*.dylib\")
-						foreach(LIB_FILE \${LIB_FILES})
-							execute_process(COMMAND install_name_tool -add_rpath @loader_path \${LIB_FILE})
-						endforeach()
-					endif()
-
-				endif()
-			")
+			add_custom_command(OUTPUT build COMMAND ${PYTHON_EXECUTABLE} setup.py build DEPENDS ${PYTHON_SRC} ${PYTHON_HDR} setup.py)
 		endif()
+		add_custom_target(pythonmodule ALL DEPENDS build SOURCES ${PYTHON_SOURCE_DIRECTORY}/setup.py.in ${PYTHON_SRC} ${PYTHON_HDR})
+		add_dependencies(pythonmodule audaspace)
+
+		install(CODE "EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} setup.py install --root=\$ENV{DESTDIR} --prefix=${CMAKE_INSTALL_PREFIX})")
 	endif()
 endif()
 
