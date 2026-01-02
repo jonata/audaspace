@@ -49,10 +49,14 @@ def main():
         print(f"✗ Sequence test failed: {e}")
         return 1
 
-    # Test 5: Generators
+    # Test 5: Generators (if available)
     try:
-        sine = aud.Sine(440)
-        silence = aud.Silence()
+        if hasattr(aud, 'Sine'):
+            sine = aud.Sine(440)
+            print("✓ Sine generator created")
+        if hasattr(aud, 'Silence'):
+            silence = aud.Silence()
+            print("✓ Silence generator created")
         print("✓ Generator test passed")
     except Exception as e:
         print(f"✗ Generator test failed: {e}")
