@@ -67,7 +67,7 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           choco install -y cmake ninja pkgconfiglite
-          vcpkg install ffmpeg libsndfile openal-soft sdl2 fftw3
+          vcpkg install -y ffmpeg libsndfile openal-soft sdl2 fftw3
 
       - name: Install Python dependencies
         run: |
