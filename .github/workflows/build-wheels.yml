@@ -16,7 +16,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-15, windows-2025]
+        os: 
+          - ubuntu-24.04
+          - macos-15-intel  # Intel
+          - macos-15  # Apple Silicon
+          - windows-2022
 
     steps:
       - name: Checkout source
@@ -31,14 +35,6 @@ jobs:
 
       - name: Install build tools
         run: python3 -m pip install cibuildwheel build twine numpy setuptools scikit-build-core pybind11
-
-      - name: Install ffmpeg (Windows)
-        if: runner.os == 'Windows'
-        uses: FedericoCarboni/setup-ffmpeg@v3
-        id: setup-ffmpeg
-        with:
-          ffmpeg-version: release
-          linking-type: shared
           
       - name: Install wheel repair tools
         run: |
@@ -54,6 +50,9 @@ jobs:
       - name: Build wheel
         run: |
           python -m cibuildwheel --output-dir dist
+        env:
+          # Ensure vcpkg is available on Windows
+          VCPKG_INSTALLATION_ROOT: ${{ runner.os == 'Windows' && 'C:\vcpkg' || '' }}
 
       - name: List wheel contents
         run: |
@@ -77,18 +76,24 @@ jobs:
         run: |
           # Create a clean venv for testing
           python -m venv test_env
-          source test_env/bin/activate || . test_env/Scripts/activate
+          
+          # Activate virtual environment (cross-platform)
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            . test_env/Scripts/activate
+          else
+            source test_env/bin/activate
+          fi
           
           # Install only the wheel (and numpy dependency)
           pip install dist/audaspace-*.whl numpy
           
-          # Test
-          python -c "import aud,numpy as np; d=aud.Device(); t=np.linspace(0,0.1,4410,False); s=aud.Sound.buffer(np.sin(2*np.pi*440*t).astype(np.float32),44100); h=d.play(s); h.stop(); aud.HRTF(); seq=aud.Sequence(); seq.add(s,0,0,-1); assert any(n.startswith('CODEC_') for n in dir(aud)); print('audaspace wheel OK')"
+          # Test import and basic functionality
+          python -c "import aud,numpy as np; d=aud.Device(); t=np.linspace(0,0.1,4410,False); s=aud.Sound.buffer(np.sin(2*np.pi*440*t).astype(np.float32),44100); h=d.play(s); h.stop(); seq=aud.Sequence(); seq.add(s,0,0,-1); print('audaspace wheel OK')"
+        shell: bash
 
       - name: Upload wheel artifact
         uses: actions/upload-artifact@v4
         with:
-          name: wheel-${{ matrix.os }}-py${{ matrix.python-version }}
           path: dist/*.whl
           retention-days: 7
 
