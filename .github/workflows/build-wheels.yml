@@ -11,7 +11,7 @@ on:
 
 jobs:
   build_wheels:
-    name: ${{ matrix.os }}
+    name: ${{ matrix.os }} - ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -66,8 +66,8 @@ jobs:
       - name: Install system dependencies (Windows)
         if: runner.os == 'Windows'
         run: |
-          choco install -y cmake ninja pkgconfiglite
-          vcpkg install -y ffmpeg libsndfile openal-soft sdl2 fftw3
+          choco install -y cmake ninja pkgconfiglite ffmpeg
+          vcpkg install libsndfile openal-soft sdl2 fftw3
 
       - name: Install Python dependencies
         run: |
@@ -92,7 +92,6 @@ jobs:
           WITH_JACK: "ON"
         run: |
           python -m build --wheel --no-isolation
-          cp dist/*.whl dist/
           
       - name: Build wheel (macOS)
         if: runner.os == 'macOS'
