@@ -101,11 +101,13 @@ test-requires = ["numpy"]
 test-command = "python {project}/test_wheel.py"
 
 [tool.cibuildwheel.linux]
-# Note: System dependencies must be installed on the build machine:
-# libavcodec-dev libavformat-dev libavutil-dev libswresample-dev
-# libsndfile1-dev libopenal-dev libsdl2-dev libfftw3-dev
-# libjack-dev libpulse-dev libpipewire-0.3-dev
-repair-wheel-command = "auditwheel repair -w {dest_dir} {wheel}"
+# manylinux containers need dependencies installed
+before-all = [
+    "yum install -y epel-release || true",
+    "yum install -y cmake3 pkgconfig || yum install -y cmake pkg-config || true",
+    "ln -sf /usr/bin/cmake3 /usr/bin/cmake || true",
+]
+repair-wheel-command = "auditwheel repair --plat manylinux_2_17_x86_64 -w {dest_dir} {wheel}"
 
 [tool.cibuildwheel.macos]
 environment = {MACOSX_DEPLOYMENT_TARGET="11.0"}

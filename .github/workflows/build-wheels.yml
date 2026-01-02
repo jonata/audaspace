@@ -11,20 +11,20 @@ on:
 
 jobs:
   build_wheels:
-    name: ${{ matrix.os }}
+    name: Build on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-24.04
-            name: Linux
-          - os: macos-15-intel
-            name: macOS Intel
-          - os: macos-15
-            name: macOS ARM
-          - os: windows-2022
-            name: Windows
+          - os: ubuntu-latest
+            cibw_archs: "x86_64"
+          - os: macos-13  # Intel
+            cibw_archs: "x86_64"
+          - os: macos-14  # Apple Silicon  
+            cibw_archs: "arm64"
+          - os: windows-latest
+            cibw_archs: "AMD64"
 
     steps:
       - name: Checkout code
@@ -37,18 +37,18 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install build tools
+      - name: Install cibuildwheel
         run: python -m pip install --upgrade pip cibuildwheel==2.16.5
 
       # ===== Linux Setup =====
-      - name: Install Linux dependencies
+      - name: Install Linux system dependencies
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y cmake ninja-build pkg-config
           sudo apt-get install -y libavcodec-dev libavformat-dev libavutil-dev libswresample-dev
           sudo apt-get install -y libsndfile1-dev libopenal-dev libsdl2-dev libfftw3-dev
-          sudo apt-get install -y libjack-dev libpulse-dev libpipewire-0.3-dev
+          sudo apt-get install -y libjack-dev libpulse-dev
 
       # ===== macOS Setup =====
       - name: Install macOS dependencies
@@ -62,77 +62,74 @@ jobs:
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          git clone https://github.com/Microsoft/vcpkg.git C:/vcpkg-ci
+          git clone --depth 1 https://github.com/Microsoft/vcpkg.git C:/vcpkg-ci
           C:/vcpkg-ci/bootstrap-vcpkg.bat
-          echo "VCPKG_ROOT=C:/vcpkg-ci" >> $GITHUB_ENV
 
-      - name: Install Windows dependencies
+      - name: Install Windows dependencies via vcpkg
         if: runner.os == 'Windows'
         shell: cmd
         run: |
-          C:\vcpkg-ci\vcpkg.exe install ffmpeg[core,avcodec,avformat,swresample]:x64-windows libsndfile:x64-windows openal-soft:x64-windows sdl2:x64-windows fftw3:x64-windows
-
-      - name: Set Windows environment
-        if: runner.os == 'Windows'
-        shell: bash
-        run: |
-          echo "CMAKE_PREFIX_PATH=C:/vcpkg-ci/installed/x64-windows" >> $GITHUB_ENV
-          echo "CMAKE_TOOLCHAIN_FILE=C:/vcpkg-ci/scripts/buildsystems/vcpkg.cmake" >> $GITHUB_ENV
+          C:\vcpkg-ci\vcpkg.exe install ffmpeg[core,avcodec,avformat,avutil,swresample]:x64-windows libsndfile:x64-windows openal-soft:x64-windows sdl2:x64-windows fftw3:x64-windows
 
       # ===== Build Wheels =====
       - name: Build wheels
-        run: python -m cibuildwheel --output-dir dist
         env:
+          CIBW_BUILD: cp38-* cp39-* cp310-* cp311-* cp312-* cp313-*
+          CIBW_SKIP: pp* *-musllinux*
+          CIBW_ARCHS: ${{ matrix.cibw_archs }}
           CIBW_BUILD_VERBOSITY: 1
+          CIBW_ENVIRONMENT_LINUX: >
+            CMAKE_PREFIX_PATH=/usr
+            PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/lib/pkgconfig
+          CIBW_ENVIRONMENT_MACOS: >
+            CMAKE_PREFIX_PATH=/opt/homebrew:/usr/local
+            PKG_CONFIG_PATH=/opt/homebrew/lib/pkgconfig:/usr/local/lib/pkgconfig
+            MACOSX_DEPLOYMENT_TARGET=11.0
+          CIBW_ENVIRONMENT_WINDOWS: >
+            CMAKE_PREFIX_PATH=C:/vcpkg-ci/installed/x64-windows
+            CMAKE_TOOLCHAIN_FILE=C:/vcpkg-ci/scripts/buildsystems/vcpkg.cmake
+          CIBW_BEFORE_BUILD_LINUX: |
+            yum install -y cmake3 || apt-get install -y cmake
+          CIBW_BEFORE_BUILD_MACOS: |
+            brew list cmake || brew install cmake
+          CIBW_TEST_REQUIRES: numpy
+          CIBW_TEST_COMMAND: python {project}/test_wheel.py
+        run: python -m cibuildwheel --output-dir dist
 
-      # ===== Verify and Test =====
-      - name: List wheels
+      # ===== Verify =====
+      - name: List built wheels
         shell: bash
         run: |
           ls -lh dist/
-          python -c "from pathlib import Path; wheels = list(Path('dist').glob('*.whl')); print(f'\nBuilt {len(wheels)} wheel(s)'); [print(f'  {w.name} ({w.stat().st_size / 1024 / 1024:.1f} MB)') for w in wheels]"
+          echo ""
+          echo "Built wheels:"
+          python -c "from pathlib import Path; [print(f'  {w.name}') for w in sorted(Path('dist').glob('*.whl'))]"
 
       - name: Inspect wheel contents
-        shell: bash
+        shell: bash  
         run: |
           python -c "
           import zipfile
           from pathlib import Path
-          for wheel in Path('dist').glob('*.whl'):
+          for wheel in sorted(Path('dist').glob('*.whl'))[:2]:  # Check first 2
               print(f'\n=== {wheel.name} ===')
               with zipfile.ZipFile(wheel) as z:
-                  binaries = [f for f in z.namelist() if any(ext in f for ext in ['.so', '.pyd', '.dylib', '.dll'])]
+                  files = z.namelist()
+                  exts = ['.so', '.pyd', '.dylib', '.dll']
+                  binaries = [f for f in files if any(f.endswith(ext) or ext in f for ext in exts)]
                   if binaries:
-                      print('Binary files:')
-                      for f in sorted(binaries)[:10]:
-                          info = z.getinfo(f)
-                          print(f'  {f} ({info.file_size/1024:.1f} KB)')
+                      print(f'Found {len(binaries)} binary files:')
+                      for f in sorted(binaries)[:5]:
+                          print(f'  {f}')
                   else:
                       print('  WARNING: No binary files found!')
           "
-
-      - name: Test wheel installation
-        shell: bash
-        run: |
-          python -m venv test_env
-          
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            source test_env/Scripts/activate
-          else
-            source test_env/bin/activate
-          fi
-          
-          pip install numpy
-          pip install dist/audaspace-*-cp312-*.whl
-          
-          python -c "import aud; print(f'audaspace imported from: {aud.__file__}')"
-          python test_wheel.py
 
       # ===== Upload Artifacts =====
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
-          name: wheels-${{ matrix.os }}
+          name: wheels-${{ matrix.os }}-${{ matrix.cibw_archs }}
           path: dist/*.whl
           retention-days: 7
 
