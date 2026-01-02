@@ -32,11 +32,6 @@ jobs:
       - name: Install build tools
         run: python3 -m pip install cibuildwheel build twine numpy setuptools scikit-build-core pybind11
 
-      - name: Install system dependencies (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          choco install -y ffmpeg
-
       - name: Install ffmpeg (Windows)
         if: runner.os == 'Windows'
         uses: FedericoCarboni/setup-ffmpeg@v3
@@ -57,17 +52,8 @@ jobs:
         shell: bash
 
       - name: Build wheel
-        if: runner.os == 'Linux' || runner.os == 'macOS'    
         run: |
           python -m cibuildwheel --output-dir dist
-
-      - name: Build wheel (Windows)
-        if: runner.os == 'Windows'
-        env:
-          WITH_WASAPI: "ON"
-          CMAKE_TOOLCHAIN_FILE: "C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
-        run: |
-          python -m build --wheel --no-isolation
 
       - name: List wheel contents
         run: |

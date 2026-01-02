@@ -115,7 +115,7 @@ environment = { WITH_COREAUDIO = "ON", MACOSX_DEPLOYMENT_TARGET = "15.0" }
 
 [tool.cibuildwheel.windows]
 before-all = [
-    "choco install -y cmake ninja pkgconfiglite"
+    "vcpkg install libsndfile openal-soft sdl2 fftw3 ffmpeg vcpkg-tool-ninja pkgconf"
 ]
 before-build = "pip install delvewheel"
 repair-wheel-command = "delvewheel repair -w {dest_dir} {wheel} || cp {wheel} {dest_dir}/"
