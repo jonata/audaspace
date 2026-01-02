@@ -43,11 +43,6 @@ install.strip = false
 wheel.py-api = "py3"
 wheel.expand-macos-universal-tags = true
 
-# Exclude CMake artifacts from wheel
-[[tool.scikit-build.overrides]]
-if.any = ["arm64", "x86_64", "amd64"]
-wheel.packages = []
-
 
 [tool.scikit-build.cmake.define]
 BUILD_DEMOS = "OFF"
