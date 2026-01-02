@@ -358,7 +358,7 @@ if(AUDASPACE_STANDALONE)
 	endif()
 
 	if(APPLE AND NOT CMAKE_OSX_DEPLOYMENT_TARGET)
-		set(CMAKE_OSX_DEPLOYMENT_TARGET "10.9" CACHE STRING "" FORCE)
+		set(CMAKE_OSX_DEPLOYMENT_TARGET "15.0" CACHE STRING "" FORCE)
 	endif()
 endif()
 
@@ -1245,38 +1245,32 @@ if(WITH_PYTHON)
 		set(PYTHON_SOURCE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bindings/python)
 		configure_file(${PYTHON_SOURCE_DIRECTORY}/setup.py.in ${CMAKE_CURRENT_BINARY_DIR}/setup.py ESCAPE_QUOTES @ONLY)
 
-		if(APPLE)
-			add_custom_command(OUTPUT build COMMAND MACOSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET} ${PYTHON_EXECUTABLE} setup.py build_ext --inplace && ${CMAKE_COMMAND} -E touch build DEPENDS ${PYTHON_SRC} ${PYTHON_HDR} setup.py)
-		elseif(WIN32)
-			set(ENV{VS100COMNTOOLS} $ENV{VS120COMNTOOLS})
-			add_custom_command(OUTPUT build COMMAND ${PYTHON_EXECUTABLE} setup.py build_ext --inplace && ${CMAKE_COMMAND} -E touch build DEPENDS ${PYTHON_SRC} ${PYTHON_HDR} setup.py)
-		else()
-			add_custom_command(OUTPUT build COMMAND ${PYTHON_EXECUTABLE} setup.py build_ext --inplace && ${CMAKE_COMMAND} -E touch build DEPENDS ${PYTHON_SRC} ${PYTHON_HDR} setup.py)
-		endif()
+		add_custom_command(OUTPUT build COMMAND ${PYTHON_EXECUTABLE} setup.py build_ext --inplace && ${CMAKE_COMMAND} -E touch build DEPENDS ${PYTHON_SRC} ${PYTHON_HDR} setup.py)
 		add_custom_target(pythonmodule ALL DEPENDS build SOURCES ${PYTHON_SOURCE_DIRECTORY}/setup.py.in ${PYTHON_SRC} ${PYTHON_HDR})
 		add_dependencies(pythonmodule audaspace)
 
-		# Install Python module for scikit-build-core compatibility
 		install(CODE "
 			execute_process(COMMAND ${CMAKE_COMMAND} --build ${CMAKE_CURRENT_BINARY_DIR} --target pythonmodule)
 			execute_process(COMMAND find ${CMAKE_CURRENT_BINARY_DIR} -name \"*aud*.so\" -exec cp {} ${CMAKE_INSTALL_PREFIX} \;
 			                ERROR_QUIET)
-			# Set RPATH for the module
+			
 			file(GLOB MODULE_FILE \"${CMAKE_INSTALL_PREFIX}/*aud*.so\")
+			
 			if(MODULE_FILE)
+
 				if(APPLE)
 					execute_process(COMMAND install_name_tool -add_rpath @loader_path/lib \${MODULE_FILE})
 				elseif(UNIX)
-					execute_process(COMMAND patchelf --set-rpath \"\\\$ORIGIN/lib\" \"\${MODULE_FILE}\" 
-					                ERROR_QUIET)
+					execute_process(COMMAND patchelf --set-rpath \"\\\$ORIGIN/lib\" \"\${MODULE_FILE}\" ERROR_QUIET)
 				endif()
-				# Set RPATH for libraries on macOS
+				
 				if(APPLE)
 					file(GLOB LIB_FILES \"\${CMAKE_INSTALL_PREFIX}/lib/libaudaspace*.dylib\")
 					foreach(LIB_FILE \${LIB_FILES})
 						execute_process(COMMAND install_name_tool -add_rpath @loader_path \${LIB_FILE})
 					endforeach()
 				endif()
+
 			endif()
 		")
 	endif()
