@@ -66,8 +66,7 @@ jobs:
       - name: Install system dependencies (Windows)
         if: runner.os == 'Windows'
         run: |
-          choco install -y cmake ninja pkgconfiglite ffmpeg
-          vcpkg install libsndfile openal-soft sdl2 fftw3
+          vcpkg install ffmpeg
 
       - name: Install Python dependencies
         run: |
@@ -99,7 +98,7 @@ jobs:
           WITH_COREAUDIO: "ON"
           MACOSX_DEPLOYMENT_TARGET: "15.0"
         run: |
-          python -m build --wheel --no-isolation
+          python -m cibuildwheel --output-dir dist
 
       - name: Build wheel (Windows)
         if: runner.os == 'Windows'
@@ -175,3 +174,8 @@ jobs:
           packages-dir: dist/
           skip-existing: true
           verbose: true
+
+
+
+# choco install -y cmake ninja pkgconfiglite ffmpeg
+# vcpkg install libsndfile openal-soft sdl2 fftw3
