@@ -92,8 +92,7 @@ jobs:
           WITH_JACK: "ON"
         run: |
           python -m build --wheel --no-isolation
-          find . -name "libaudaspace.so*" -type f
-          auditwheel repair dist/*.whl -w dist/ --lib-sdir lib
+          auditwheel repair dist/*.whl -w dist/ --plat manylinux_2_17_x86_64
           rm dist/*-linux_*.whl
           
       - name: Build wheel (macOS)
