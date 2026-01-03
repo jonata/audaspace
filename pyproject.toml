@@ -68,9 +68,10 @@ WITH_WASAPI = "ON"
 before-all = [
     "yum install -y epel-release",
     "yum install -y https://download1.rpmfusion.org/free/el/rpmfusion-free-release-$(rpm -E %rhel).noarch.rpm || true",
-    "yum install -y ffmpeg-devel fftw-devel libsndfile-devel openal-soft-devel SDL2-devel alsa-lib-devel pulseaudio-libs-devel jack-audio-connection-kit-devel pkgconfig python3-devel git cmake3 make gcc-c++",
+    "yum install -y ffmpeg-devel fftw-devel libsndfile-devel openal-soft-devel SDL2-devel alsa-lib-devel pulseaudio-libs-devel jack-audio-connection-kit-devel pkgconfig python3-devel git cmake3 make gcc-c++ python3-pip",
+    "pip3 install meson ninja",
     "git clone https://github.com/breakfastquay/rubberband.git /tmp/rubberband",
-    "cd /tmp/rubberband && git checkout v3.3.0 && make -j$(nproc) && make install PREFIX=/usr",
+    "cd /tmp/rubberband && git checkout v3.3.0 && meson setup build --prefix=/usr && meson compile -C build && meson install -C build",
     "pip install numpy",
 ]
 [tool.cibuildwheel.linux.environment]
@@ -85,6 +86,7 @@ before-all = [
 [tool.cibuildwheel.macos.environment]
 PKG_CONFIG_PATH = "/opt/homebrew/lib/pkgconfig:/usr/local/lib/pkgconfig"
 CMAKE_PREFIX_PATH = "/opt/homebrew:/usr/local"
+[tool.cibuildwheel.macos.cmake.define]
 WITH_WASAPI = "OFF"
 WITH_PULSEAUDIO = "OFF"
 WITH_PIPEWIRE = "OFF"
