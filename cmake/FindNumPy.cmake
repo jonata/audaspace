@@ -4,17 +4,16 @@
 #  NUMPY_FOUND - system has numpy
 #  NUMPY_INCLUDE_DIRS - the numpy include directories
 
-find_package(PythonInterp 3.2)
-find_package(PythonLibs 3.2)
+find_package(Python3 3.2 COMPONENTS Interpreter Development)
 
 set(_NUMPY_SEARCH_DIRECTORIES)
 
-if(PYTHONLIBS_FOUND)
-	list(APPEND _NUMPY_SEARCH_DIRECTORIES ${PYTHON_INCLUDE_DIRS})
+if(Python3_Development_FOUND)
+	list(APPEND _NUMPY_SEARCH_DIRECTORIES ${Python3_INCLUDE_DIRS})
 endif()
 
-if(PYTHONINTERP_FOUND)
-	execute_process(COMMAND "${PYTHON_EXECUTABLE}" -c "import numpy; print(numpy.get_include(), end='')"
+if(Python3_Interpreter_FOUND)
+	execute_process(COMMAND "${Python3_EXECUTABLE}" -c "import numpy; print(numpy.get_include(), end='')"
 		OUTPUT_VARIABLE _PYTHON_NUMPY_PATH
 		RESULT_VARIABLE _ERROR_FINDING_NUMPY)
 	if(${_ERROR_FINDING_NUMPY} EQUAL 0)
