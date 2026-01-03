@@ -85,7 +85,6 @@ before-all = [
 [tool.cibuildwheel.macos.environment]
 PKG_CONFIG_PATH = "/opt/homebrew/lib/pkgconfig:/usr/local/lib/pkgconfig"
 CMAKE_PREFIX_PATH = "/opt/homebrew:/usr/local"
-[tool.cibuildwheel.macos.cmake.define]
 WITH_WASAPI = "OFF"
 WITH_PULSEAUDIO = "OFF"
 WITH_PIPEWIRE = "OFF"
