@@ -1,0 +1,195 @@
+name: Build and Publish Wheels
+
+on:
+  push:
+    branches: [ github-actions-tests ]
+  release:
+    types: [published]
+
+jobs:
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-24.04, windows-2025, macos-15, macos-15-intel]
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU (Linux only)
+        if: runner.os == 'Linux'
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: all
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.22.0
+        env:
+          CIBW_ARCHS_MACOS: auto universal2
+          CIBW_ARCHS_LINUX: auto
+          CIBW_ARCHS_WINDOWS: auto
+          CIBW_SKIP: "*musllinux* *i686* pp* *-win32"
+          CIBW_TEST_REQUIRES: pytest
+          CIBW_TEST_COMMAND: python -c "import aud; print('aud module imported successfully'); sine = aud.Sound.sine(440); print('Sine wave created successfully')"
+          CIBW_ENVIRONMENT_PASS_LINUX: LD_LIBRARY_PATH
+          CIBW_BEFORE_ALL_LINUX: |
+            yum install -y alsa-lib-devel pulseaudio-libs-devel jack-audio-connection-kit-devel fftw-devel libsndfile-devel openal-soft-devel sdl2-devel rubberband-devel
+          CIBW_BEFORE_ALL_MACOS: |
+            brew install fftw libsamplerate libsndfile openal-soft sdl2 rubberband
+          CIBW_BEFORE_ALL_WINDOWS: |
+            choco install -y fftw3-devel libsamplerate-devel libsndfile-devel openal-soft-devel sdl2-devel rubberband-devel
+
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          path: ./wheelhouse/*.whl
+          name: wheels-${{ matrix.os }}
+
+  test_wheels:
+    name: Test wheels on ${{ matrix.os }}
+    needs: build_wheels
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-24.04, windows-2025, macos-15, macos-15-intel]
+      fail-fast: false
+
+    steps:
+      - name: Download wheels
+        uses: actions/download-artifact@v4
+        with:
+          name: wheels-${{ matrix.os }}
+          path: dist
+
+      - name: Setup Python and Create Virtual Environment (Linux/macOS)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          python -m venv test_env
+          source test_env/bin/activate
+          pip install --upgrade pip
+
+      - name: Setup Python and Create Virtual Environment (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          python -m venv test_env
+          test_env\Scripts\Activate.ps1
+          pip install --upgrade pip
+
+      - name: Install wheel and test (Linux/macOS)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          source test_env/bin/activate
+          pip install dist/*.whl
+          python -c "
+          import aud
+          print('✓ aud module imported successfully')
+
+          # Test creating a device (may fail in CI without audio hardware)
+          try:
+              device = aud.Device()
+              print(f'✓ Device created: {device}')
+              print(f'  Sample rate: {device.rate}')
+              print(f'  Channels: {device.channels}')
+          except Exception as e:
+              print(f'⚠ Device creation failed (expected in CI): {e}')
+
+          # Test creating various signals
+          sine = aud.Sound.sine(440)
+          print('✓ Sine wave created successfully')
+
+          square = sine.threshold()
+          print('✓ Square wave created successfully')
+
+          silence = aud.Sound.silence()
+          print('✓ Silence created successfully')
+
+          sawtooth = aud.Sound.sawtooth(220)
+          print('✓ Sawtooth wave created successfully')
+
+          triangle = aud.Sound.triangle(330)
+          print('✓ Triangle wave created successfully')
+
+          # Test applying effects
+          vol_sound = sine.volume(0.5)
+          print('✓ Volume effect applied successfully')
+
+          pitch_sound = sine.pitch(1.5)
+          print('✓ Pitch effect applied successfully')
+
+          print('✓ All basic functionality tests passed!')
+          "
+
+      - name: Install wheel and test (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          test_env\Scripts\Activate.ps1
+          pip install dist/*.whl
+          python -c "
+          import aud
+          print('✓ aud module imported successfully')
+
+          # Test creating a device (may fail in CI without audio hardware)
+          try:
+              device = aud.Device()
+              print(f'✓ Device created: {device}')
+              print(f'  Sample rate: {device.rate}')
+              print(f'  Channels: {device.channels}')
+          except Exception as e:
+              print(f'⚠ Device creation failed (expected in CI): {e}')
+
+          # Test creating various signals
+          sine = aud.Sound.sine(440)
+          print('✓ Sine wave created successfully')
+
+          square = sine.threshold()
+          print('✓ Square wave created successfully')
+
+          silence = aud.Sound.silence()
+          print('✓ Silence created successfully')
+
+          sawtooth = aud.Sound.sawtooth(220)
+          print('✓ Sawtooth wave created successfully')
+
+          triangle = aud.Sound.triangle(330)
+          print('✓ Triangle wave created successfully')
+
+          # Test applying effects
+          vol_sound = sine.volume(0.5)
+          print('✓ Volume effect applied successfully')
+
+          pitch_sound = sine.pitch(1.5)
+          print('✓ Pitch effect applied successfully')
+
+          print('✓ All basic functionality tests passed!')
+          "
+
+  publish:
+    name: Publish to PyPI
+    needs: [build_wheels, test_wheels]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release' && github.event.action == 'published'
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Download all wheels
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+
+      - name: Flatten directory structure
+        run: |
+          mkdir -p consolidated_dist
+          find dist -name "*.whl" -exec cp {} consolidated_dist/ \;
+          ls -la consolidated_dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: consolidated_dist/

@@ -882,7 +882,7 @@ if(WITH_SDL)
 endif()
 
 # WASAPI
-if(WITH_WASAPI)
+if(WITH_WASAPI AND WIN32)
 	set(WASAPI_SRC
 		plugins/wasapi/WASAPIDevice.cpp
 	)
@@ -1083,7 +1083,7 @@ if(WITH_SDL AND PLUGIN_SDL)
 	install(TARGETS audsdl DESTINATION ${DEFAULT_PLUGIN_PATH})
 endif()
 
-if(WITH_WASAPI AND PLUGIN_WASAPI)
+if(WITH_WASAPI AND PLUGIN_WASAPI AND WIN32)
 	add_definitions(-DWASAPI_PLUGIN)
 	include_directories(${INCLUDE})
 	add_library(audwasapi SHARED ${WASAPI_SRC} ${WASAPI_HDR} ${HDR})
@@ -1219,36 +1219,67 @@ if(WITH_PYTHON)
 			)
 	endif()
 
-	add_library(audaspace-py ${LIBRARY_TYPE} ${PYTHON_SRC} ${PYTHON_HDR})
-	target_link_libraries(audaspace-py audaspace ${PYTHON_LIBRARIES})
-	set_target_properties(audaspace-py PROPERTIES SOVERSION ${AUDASPACE_VERSION})
-
-	if(AUDASPACE_STANDALONE)
-		install(TARGETS audaspace-py
-			RUNTIME DESTINATION ${BIN_DESTINATION}
-			LIBRARY DESTINATION ${LIB_DESTINATION}
-			ARCHIVE DESTINATION ${LIB_DESTINATION}
-		)
-
-		install(FILES ${PYTHON_HDR} DESTINATION include/audaspace/python)
-	endif()
-
-	if(WITH_PYTHON_MODULE)
-		set(PYTHON_SOURCE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bindings/python)
-		configure_file(${PYTHON_SOURCE_DIRECTORY}/setup.py.in ${CMAKE_CURRENT_BINARY_DIR}/setup.py ESCAPE_QUOTES @ONLY)
-
-		if(APPLE)
-			add_custom_command(OUTPUT build COMMAND MACOSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET} ${PYTHON_EXECUTABLE} setup.py build DEPENDS ${PYTHON_SRC} ${PYTHON_HDR} setup.py)
-		elseif(WIN32)
-			set(ENV{VS100COMNTOOLS} $ENV{VS120COMNTOOLS})
-			add_custom_command(OUTPUT build COMMAND ${PYTHON_EXECUTABLE} setup.py build DEPENDS ${PYTHON_SRC} ${PYTHON_HDR} setup.py)
+	# Check if we're building with scikit-build-core
+	if(DEFINED SKBUILD)
+		# When building with scikit-build-core, create a module library with proper naming
+		add_library(aud MODULE ${PYTHON_SRC} ${PYTHON_HDR})
+		set_target_properties(aud PROPERTIES PREFIX "")
+		if(WIN32)
+			set_target_properties(aud PROPERTIES SUFFIX ".pyd")
 		else()
-			add_custom_command(OUTPUT build COMMAND ${PYTHON_EXECUTABLE} setup.py build DEPENDS ${PYTHON_SRC} ${PYTHON_HDR} setup.py)
+			set_target_properties(aud PROPERTIES SUFFIX ".so")
 		endif()
-		add_custom_target(pythonmodule ALL DEPENDS build SOURCES ${PYTHON_SOURCE_DIRECTORY}/setup.py.in ${PYTHON_SRC} ${PYTHON_HDR})
-		add_dependencies(pythonmodule audaspace)
+		target_link_libraries(aud audaspace ${PYTHON_LIBRARIES})
+		# Include Python headers
+		include_directories(${PYTHON_INCLUDE_DIRS} ${NUMPY_INCLUDE_DIRS})
+		# Set C++ standard
+		set_target_properties(aud PROPERTIES CXX_STANDARD 17)
+		# Install the Python module and main library to the package root for self-contained wheels
+		install(TARGETS aud
+			LIBRARY DESTINATION .
+			RUNTIME DESTINATION .
+		)
+		# Also install the main audaspace library to the same location
+		install(TARGETS audaspace
+			LIBRARY DESTINATION .
+			RUNTIME DESTINATION .
+		)
+		# Set RPATH to look for libraries in the same directory as the module
+		set_target_properties(aud PROPERTIES INSTALL_RPATH "$ORIGIN")
+		set_target_properties(aud PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
+	else()
+		# Original build system behavior
+		add_library(audaspace-py ${LIBRARY_TYPE} ${PYTHON_SRC} ${PYTHON_HDR})
+		target_link_libraries(audaspace-py audaspace ${PYTHON_LIBRARIES})
+		set_target_properties(audaspace-py PROPERTIES SOVERSION ${AUDASPACE_VERSION})
 
-		install(CODE "EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} setup.py install --root=\$ENV{DESTDIR} --prefix=${CMAKE_INSTALL_PREFIX})")
+		if(AUDASPACE_STANDALONE)
+			install(TARGETS audaspace-py
+				RUNTIME DESTINATION ${BIN_DESTINATION}
+				LIBRARY DESTINATION ${LIB_DESTINATION}
+				ARCHIVE DESTINATION ${LIB_DESTINATION}
+			)
+
+			install(FILES ${PYTHON_HDR} DESTINATION include/audaspace/python)
+		endif()
+
+		if(WITH_PYTHON_MODULE)
+			set(PYTHON_SOURCE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bindings/python)
+			configure_file(${PYTHON_SOURCE_DIRECTORY}/setup.py.in ${CMAKE_CURRENT_BINARY_DIR}/setup.py ESCAPE_QUOTES @ONLY)
+
+			if(APPLE)
+				add_custom_command(OUTPUT build COMMAND MACOSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET} ${PYTHON_EXECUTABLE} setup.py build DEPENDS ${PYTHON_SRC} ${PYTHON_HDR} setup.py)
+			elseif(WIN32)
+				set(ENV{VS100COMNTOOLS} $ENV{VS120COMNTOOLS})
+				add_custom_command(OUTPUT build COMMAND ${PYTHON_EXECUTABLE} setup.py build DEPENDS ${PYTHON_SRC} ${PYTHON_HDR} setup.py)
+			else()
+				add_custom_command(OUTPUT build COMMAND ${PYTHON_EXECUTABLE} setup.py build DEPENDS ${PYTHON_SRC} ${PYTHON_HDR} setup.py)
+			endif()
+			add_custom_target(pythonmodule ALL DEPENDS build SOURCES ${PYTHON_SOURCE_DIRECTORY}/setup.py.in ${PYTHON_SRC} ${PYTHON_HDR})
+			add_dependencies(pythonmodule audaspace)
+
+			install(CODE "EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} setup.py install --root=\$ENV{DESTDIR} --prefix=${CMAKE_INSTALL_PREFIX})")
+		endif()
 	endif()
 endif()
 

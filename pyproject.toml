@@ -1,0 +1,67 @@
+[build-system]
+requires = ["scikit-build-core>=0.3.3", "setuptools_scm", "numpy>=1.21"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "audaspace"
+description = "Audaspace is a high level audio library"
+readme = "README.md"
+license = {file = "LICENSE"}
+authors = [
+    {name = "Jörg Müller", email = "nexyon@gmail.com"},
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: C++",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: 3.12",
+    "Topic :: Multimedia :: Sound/Audio",
+]
+requires-python = ">=3.8"
+dynamic = ["version"]
+
+[project.optional-dependencies]
+dev = [
+    "build",
+    "pytest",
+    "wheel",
+]
+
+[tool.scikit-build]
+cmake.build-type = "Release"
+cmake.verbose = true
+sdist.exclude = [".gitignore", "*.pyc", "__pycache__/", ".git/", "build/"]
+
+[tool.scikit-build.wheel]
+# Build wheels for all platforms
+expand-macos-universal-tags = true
+py-api = "py3"
+packages = ["aud"]
+
+[tool.scikit-build.cmake.define]
+AUDASPACE_STANDALONE = "ON"
+WITH_PYTHON = "ON"
+WITH_PYTHON_MODULE = "ON"
+SHARED_LIBRARY = "ON"
+WITH_C = "ON"
+WITH_FFMPEG = "ON"
+WITH_FFTW = "ON"
+WITH_JACK = "OFF"  # Disable JACK for self-contained builds
+WITH_LIBSNDFILE = "ON"
+WITH_OPENAL = "ON"
+WITH_RUBBERBAND = "ON"
+WITH_SDL = "ON"
+WITH_PULSEAUDIO = "OFF"  # Disable PulseAudio for self-contained builds
+WITH_PIPEWIRE = "OFF"    # Disable PipeWire for self-contained builds
+WITH_COREAUDIO = "ON"
+WITH_WASAPI = "ON"
+
+[tool.setuptools_scm]
