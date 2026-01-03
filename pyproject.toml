@@ -79,7 +79,6 @@ before-all = [
 [tool.cibuildwheel.linux.environment]
 PKG_CONFIG_PATH = "/usr/lib64/pkgconfig:/usr/lib/pkgconfig:/usr/share/pkgconfig"
 CMAKE_PREFIX_PATH = "/usr:/usr/local"
-[tool.cibuildwheel.linux.cmake.define]
 WITH_WASAPI = "OFF"
 WITH_COREAUDIO = "OFF"
 
@@ -91,7 +90,6 @@ before-all = [
 [tool.cibuildwheel.macos.environment]
 PKG_CONFIG_PATH = "/opt/homebrew/lib/pkgconfig:/usr/local/lib/pkgconfig"
 CMAKE_PREFIX_PATH = "/opt/homebrew:/usr/local"
-[tool.cibuildwheel.macos.cmake.define]
 WITH_WASAPI = "OFF"
 WITH_PULSEAUDIO = "OFF"
 WITH_PIPEWIRE = "OFF"
@@ -103,7 +101,6 @@ before-all = [
 ]
 [tool.cibuildwheel.windows.environment]
 CMAKE_TOOLCHAIN_FILE = "C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
-[tool.cibuildwheel.windows.cmake.define]
 WITH_COREAUDIO = "OFF"
 WITH_PULSEAUDIO = "OFF"
 WITH_PIPEWIRE = "OFF"
