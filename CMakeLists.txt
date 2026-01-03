@@ -1006,6 +1006,9 @@ if(DEFINED SKBUILD)
 	set_target_properties(audaspace PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
 	if(APPLE)
 		set_target_properties(audaspace PROPERTIES INSTALL_RPATH "@loader_path")
+		# Also set the install name for the main library so plugins can find it
+		set_target_properties(audaspace PROPERTIES BUILD_WITH_INSTALL_NAME_DIR TRUE)
+		set_target_properties(audaspace PROPERTIES INSTALL_NAME_DIR "@loader_path")
 	elseif(UNIX)
 		set_target_properties(audaspace PROPERTIES INSTALL_RPATH "$ORIGIN")
 	endif()
@@ -1403,8 +1406,12 @@ if(WITH_PYTHON)
 			# On macOS, use @loader_path instead of $ORIGIN
 			if(APPLE)
 				set_target_properties(aud PROPERTIES INSTALL_RPATH "@loader_path")
+				# Also make sure the main library itself has the correct RPATH for plugins to find it
+				set_target_properties(audaspace PROPERTIES INSTALL_RPATH "@loader_path")
 			elseif(UNIX)
 				set_target_properties(aud PROPERTIES INSTALL_RPATH "$ORIGIN")
+				# Also make sure the main library itself has the correct RPATH for plugins to find it
+				set_target_properties(audaspace PROPERTIES INSTALL_RPATH "$ORIGIN")
 			endif()
 		endif()
 	else()
