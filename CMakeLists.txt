@@ -994,7 +994,12 @@ if(WITH_COREAUDIO AND PLUGIN_COREAUDIO)
 	# Set RPATH for plugins to look for the main library in the same directory
 	set_target_properties(audcoreaudio PROPERTIES INSTALL_RPATH "$ORIGIN")
 	set_target_properties(audcoreaudio PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
-	install(TARGETS audcoreaudio DESTINATION ${DEFAULT_PLUGIN_PATH})
+	# For scikit-build-core (self-contained wheels), install plugins in the same directory as main library
+	if(DEFINED SKBUILD)
+		install(TARGETS audcoreaudio DESTINATION .)
+	else()
+		install(TARGETS audcoreaudio DESTINATION ${DEFAULT_PLUGIN_PATH})
+	endif()
 endif()
 
 if(WITH_FFMPEG AND PLUGIN_FFMPEG)
@@ -1008,7 +1013,12 @@ if(WITH_FFMPEG AND PLUGIN_FFMPEG)
 	if(WITH_VERSIONED_PLUGINS)
 		set_target_properties(audffmpeg PROPERTIES SOVERSION ${AUDASPACE_VERSION})
 	endif()
-	install(TARGETS audffmpeg DESTINATION ${DEFAULT_PLUGIN_PATH})
+	# For scikit-build-core (self-contained wheels), install plugins in the same directory as main library
+	if(DEFINED SKBUILD)
+		install(TARGETS audffmpeg DESTINATION .)
+	else()
+		install(TARGETS audffmpeg DESTINATION ${DEFAULT_PLUGIN_PATH})
+	endif()
 endif()
 
 if(WITH_JACK AND PLUGIN_JACK)
@@ -1026,7 +1036,12 @@ if(WITH_JACK AND PLUGIN_JACK)
 	if(WITH_VERSIONED_PLUGINS)
 		set_target_properties(audjack PROPERTIES SOVERSION ${AUDASPACE_VERSION})
 	endif()
-	install(TARGETS audjack DESTINATION ${DEFAULT_PLUGIN_PATH})
+	# For scikit-build-core (self-contained wheels), install plugins in the same directory as main library
+	if(DEFINED SKBUILD)
+		install(TARGETS audjack DESTINATION .)
+	else()
+		install(TARGETS audjack DESTINATION ${DEFAULT_PLUGIN_PATH})
+	endif()
 endif()
 
 if(WITH_LIBSNDFILE AND PLUGIN_LIBSNDFILE)
@@ -1040,7 +1055,12 @@ if(WITH_LIBSNDFILE AND PLUGIN_LIBSNDFILE)
 	# Set RPATH for plugins to look for the main library in the same directory
 	set_target_properties(audlibsndfile PROPERTIES INSTALL_RPATH "$ORIGIN")
 	set_target_properties(audlibsndfile PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
-	install(TARGETS audlibsndfile DESTINATION ${DEFAULT_PLUGIN_PATH})
+	# For scikit-build-core (self-contained wheels), install plugins in the same directory as main library
+	if(DEFINED SKBUILD)
+		install(TARGETS audlibsndfile DESTINATION .)
+	else()
+		install(TARGETS audlibsndfile DESTINATION ${DEFAULT_PLUGIN_PATH})
+	endif()
 endif()
 
 if(WITH_OPENAL AND PLUGIN_OPENAL)
@@ -1054,7 +1074,12 @@ if(WITH_OPENAL AND PLUGIN_OPENAL)
 	# Set RPATH for plugins to look for the main library in the same directory
 	set_target_properties(audopenal PROPERTIES INSTALL_RPATH "$ORIGIN")
 	set_target_properties(audopenal PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
-	install(TARGETS audopenal DESTINATION ${DEFAULT_PLUGIN_PATH})
+	# For scikit-build-core (self-contained wheels), install plugins in the same directory as main library
+	if(DEFINED SKBUILD)
+		install(TARGETS audopenal DESTINATION .)
+	else()
+		install(TARGETS audopenal DESTINATION ${DEFAULT_PLUGIN_PATH})
+	endif()
 endif()
 
 if(WITH_PULSEAUDIO AND PLUGIN_PULSEAUDIO)
@@ -1072,7 +1097,12 @@ if(WITH_PULSEAUDIO AND PLUGIN_PULSEAUDIO)
 	# Set RPATH for plugins to look for the main library in the same directory
 	set_target_properties(audpulseaudio PROPERTIES INSTALL_RPATH "$ORIGIN")
 	set_target_properties(audpulseaudio PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
-	install(TARGETS audpulseaudio DESTINATION ${DEFAULT_PLUGIN_PATH})
+	# For scikit-build-core (self-contained wheels), install plugins in the same directory as main library
+	if(DEFINED SKBUILD)
+		install(TARGETS audpulseaudio DESTINATION .)
+	else()
+		install(TARGETS audpulseaudio DESTINATION ${DEFAULT_PLUGIN_PATH})
+	endif()
 endif()
 
 if(WITH_PIPEWIRE AND PLUGIN_PIPEWIRE)
@@ -1090,7 +1120,12 @@ if(WITH_PIPEWIRE AND PLUGIN_PIPEWIRE)
 	# Set RPATH for plugins to look for the main library in the same directory
 	set_target_properties(audpipewire PROPERTIES INSTALL_RPATH "$ORIGIN")
 	set_target_properties(audpipewire PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
-	install(TARGETS audpipewire DESTINATION ${DEFAULT_PLUGIN_PATH})
+	# For scikit-build-core (self-contained wheels), install plugins in the same directory as main library
+	if(DEFINED SKBUILD)
+		install(TARGETS audpipewire DESTINATION .)
+	else()
+		install(TARGETS audpipewire DESTINATION ${DEFAULT_PLUGIN_PATH})
+	endif()
 endif()
 
 if(WITH_SDL AND PLUGIN_SDL)
@@ -1104,7 +1139,12 @@ if(WITH_SDL AND PLUGIN_SDL)
 	# Set RPATH for plugins to look for the main library in the same directory
 	set_target_properties(audsdl PROPERTIES INSTALL_RPATH "$ORIGIN")
 	set_target_properties(audsdl PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
-	install(TARGETS audsdl DESTINATION ${DEFAULT_PLUGIN_PATH})
+	# For scikit-build-core (self-contained wheels), install plugins in the same directory as main library
+	if(DEFINED SKBUILD)
+		install(TARGETS audsdl DESTINATION .)
+	else()
+		install(TARGETS audsdl DESTINATION ${DEFAULT_PLUGIN_PATH})
+	endif()
 endif()
 
 if(WITH_WASAPI AND PLUGIN_WASAPI AND WIN32)
@@ -1118,7 +1158,12 @@ if(WITH_WASAPI AND PLUGIN_WASAPI AND WIN32)
 	# Set RPATH for plugins to look for the main library in the same directory
 	set_target_properties(audwasapi PROPERTIES INSTALL_RPATH "$ORIGIN")
 	set_target_properties(audwasapi PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
-	install(TARGETS audwasapi DESTINATION ${DEFAULT_PLUGIN_PATH})
+	# For scikit-build-core (self-contained wheels), install plugins in the same directory as main library
+	if(DEFINED SKBUILD)
+		install(TARGETS audwasapi DESTINATION .)
+	else()
+		install(TARGETS audwasapi DESTINATION ${DEFAULT_PLUGIN_PATH})
+	endif()
 endif()
 
 # dlls
@@ -1194,12 +1239,24 @@ if(WITH_C)
 	if(SEPARATE_C)
 		add_library(audaspace-c ${LIBRARY_TYPE} ${C_SRC} ${C_HDR})
 		target_link_libraries(audaspace-c audaspace)
+		# Set RPATH for the C library to look for the main library in the same directory
+		set_target_properties(audaspace-c PROPERTIES INSTALL_RPATH "$ORIGIN")
+		set_target_properties(audaspace-c PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
 		set_target_properties(audaspace-c PROPERTIES SOVERSION ${AUDASPACE_VERSION})
-		install(TARGETS audaspace-c
-			RUNTIME DESTINATION ${BIN_DESTINATION}
-			LIBRARY DESTINATION ${LIB_DESTINATION}
-			ARCHIVE DESTINATION ${LIB_DESTINATION}
-		)
+		# For scikit-build-core (self-contained wheels), install in the same directory as main library
+		if(DEFINED SKBUILD)
+			install(TARGETS audaspace-c
+				LIBRARY DESTINATION .
+				RUNTIME DESTINATION .
+				ARCHIVE DESTINATION .
+			)
+		else()
+			install(TARGETS audaspace-c
+				RUNTIME DESTINATION ${BIN_DESTINATION}
+				LIBRARY DESTINATION ${LIB_DESTINATION}
+				ARCHIVE DESTINATION ${LIB_DESTINATION}
+			)
+		endif()
 	endif()
 
 	if(AUDASPACE_STANDALONE)
@@ -1256,6 +1313,7 @@ if(WITH_PYTHON)
 		else()
 			set_target_properties(aud PROPERTIES SUFFIX ".so")
 		endif()
+		# For scikit-build-core, we need to make sure dependencies are properly linked
 		target_link_libraries(aud audaspace ${PYTHON_LIBRARIES})
 		# Include Python headers
 		include_directories(${PYTHON_INCLUDE_DIRS} ${NUMPY_INCLUDE_DIRS})
@@ -1278,6 +1336,15 @@ if(WITH_PYTHON)
 		# Also set RPATH for the main library itself to make it self-contained
 		set_target_properties(audaspace PROPERTIES INSTALL_RPATH "$ORIGIN")
 		set_target_properties(audaspace PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
+
+		# Set RPATH for the Python module to look for libraries in the same directory
+		if(APPLE)
+			set_target_properties(aud PROPERTIES INSTALL_RPATH "@loader_path")
+			set_target_properties(audaspace PROPERTIES INSTALL_RPATH "@loader_path")
+		elseif(UNIX)
+			set_target_properties(aud PROPERTIES INSTALL_RPATH "$ORIGIN")
+			set_target_properties(audaspace PROPERTIES INSTALL_RPATH "$ORIGIN")
+		endif()
 	else()
 		# Original build system behavior
 		add_library(audaspace-py ${LIBRARY_TYPE} ${PYTHON_SRC} ${PYTHON_HDR})
