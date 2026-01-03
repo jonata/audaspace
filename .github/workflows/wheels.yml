@@ -29,7 +29,6 @@ jobs:
           CIBW_TEST_COMMAND: python -c "import aud; print('aud module imported successfully'); sine = aud.Sound.sine(440); print('Sine wave created successfully')"
           CIBW_ENVIRONMENT_PASS_LINUX: LD_LIBRARY_PATH
           CIBW_ENVIRONMENT_PASS_MACOS: LD_LIBRARY_PATH
-          CMAKE_TOOLCHAIN_FILE: C:\vcpkg\scripts\buildsystems\vcpkg.cmake
           VCPKG_TARGET_TRIPLET: x64-windows
           VCPKG_ROOT: C:\vcpkg
 
