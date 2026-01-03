@@ -966,15 +966,12 @@ add_library(audaspace ${LIBRARY_TYPE} ${SRC} ${HDR})
 target_link_libraries(audaspace ${LIBRARIES})
 set_target_properties(audaspace PROPERTIES SOVERSION ${AUDASPACE_VERSION})
 
-if(AUDASPACE_STANDALONE AND NOT SKBUILD)
+if(AUDASPACE_STANDALONE)
 	install(TARGETS audaspace
 		RUNTIME DESTINATION ${BIN_DESTINATION}
 		LIBRARY DESTINATION ${LIB_DESTINATION}
 		ARCHIVE DESTINATION ${LIB_DESTINATION}
 	)
-
-	install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/ DESTINATION include/audaspace)
-	install(FILES ${CMAKE_CURRENT_BINARY_DIR}/Audaspace.h DESTINATION include/audaspace)
 
 	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/packages/pkgconfig/audaspace.pc.in ${CMAKE_CURRENT_BINARY_DIR}/audaspace.pc @ONLY)
 
@@ -1156,13 +1153,11 @@ if(BUILD_DEMOS)
 		endif()
 	endif()
 
-	if(AUDASPACE_STANDALONE AND NOT SKBUILD)
-		install(TARGETS ${DEMOS}
-			RUNTIME DESTINATION ${BIN_DESTINATION}
-			LIBRARY DESTINATION ${LIB_DESTINATION}
-			ARCHIVE DESTINATION ${LIB_DESTINATION}
-		)
-	endif()
+	install(TARGETS ${DEMOS}
+		RUNTIME DESTINATION ${BIN_DESTINATION}
+		LIBRARY DESTINATION ${LIB_DESTINATION}
+		ARCHIVE DESTINATION ${LIB_DESTINATION}
+	)
 endif()
 
 # bindings
@@ -1238,6 +1233,8 @@ if(WITH_PYTHON)
 	endif()
 
 	if(WITH_PYTHON_MODULE AND Python3_FOUND AND NUMPY_FOUND)
+		message(STATUS "Building Python module 'aud'")
+		message(STATUS "Python sources: ${PYTHON_SRC}")
 		# Create Python extension module for scikit-build-core
 		add_library(aud MODULE ${PYTHON_SRC} ${PYTHON_HDR})
 		target_link_libraries(aud PRIVATE audaspace ${Python3_LIBRARIES})
@@ -1263,6 +1260,8 @@ if(WITH_PYTHON)
 		endif()
 		install(TARGETS aud DESTINATION .)
 		message(STATUS "Building Python module 'aud' with sources: ${PYTHON_SRC}")
+	else()
+		message(STATUS "Python module NOT being built: WITH_PYTHON_MODULE=${WITH_PYTHON_MODULE}, Python3_FOUND=${Python3_FOUND}, NUMPY_FOUND=${NUMPY_FOUND}")
 	endif()
 endif()
 
