@@ -74,6 +74,9 @@ before-all = [
 [tool.cibuildwheel.linux.environment]
 PKG_CONFIG_PATH = "/usr/lib64/pkgconfig:/usr/lib/pkgconfig:/usr/share/pkgconfig"
 CMAKE_PREFIX_PATH = "/usr:/usr/local"
+Python3_EXECUTABLE = "/opt/python/cp39-cp39/bin/python"
+Python3_INCLUDE_DIR = "/opt/python/cp39-cp39/include/python3.9"
+Python3_LIBRARY = "/opt/python/cp39-cp39/lib/libpython3.9.so"
 
 
 [tool.cibuildwheel.macos]
@@ -84,7 +87,9 @@ before-all = [
 [tool.cibuildwheel.macos.environment]
 PKG_CONFIG_PATH = "/opt/homebrew/lib/pkgconfig:/usr/local/lib/pkgconfig"
 CMAKE_PREFIX_PATH = "/opt/homebrew:/usr/local"
-Python3_ROOT_DIR = "/Library/Frameworks/Python.framework/Versions/Current"
+Python3_EXECUTABLE = "/Users/runner/hostedtoolcache/Python/3.9.20/x64/bin/python"
+Python3_INCLUDE_DIR = "/Users/runner/hostedtoolcache/Python/3.9.20/x64/include/python3.9"
+Python3_LIBRARY = "/Users/runner/hostedtoolcache/Python/3.9.20/x64/lib/libpython3.9.dylib"
 
 
 [tool.cibuildwheel.windows]
