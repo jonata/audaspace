@@ -77,6 +77,8 @@ before-all = [
 [tool.cibuildwheel.linux.environment]
 PKG_CONFIG_PATH = "/usr/lib64/pkgconfig:/usr/lib/pkgconfig:/usr/share/pkgconfig"
 CMAKE_PREFIX_PATH = "/usr:/usr/local"
+WITH_WASAPI = "OFF"
+WITH_COREAUDIO = "OFF"
 
 [tool.cibuildwheel.macos]
 before-all = [
@@ -97,4 +99,5 @@ before-all = [
 ]
 [tool.cibuildwheel.windows.environment]
 CMAKE_TOOLCHAIN_FILE = "C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
+WITH_COREAUDIO = "ON"
 
