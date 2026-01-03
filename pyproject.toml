@@ -37,7 +37,7 @@ dev = [
 
 [tool.scikit-build]
 cmake.build-type = "Release"
-cmake.verbose = true
+build.verbose = true
 sdist.exclude = [".gitignore", "*.pyc", "__pycache__/", ".git/", "build/"]
 
 [tool.scikit-build.wheel]
@@ -67,7 +67,7 @@ WITH_WASAPI = "ON"
 [tool.cibuildwheel.linux]
 before-all = [
     "yum install -y https://download1.rpmfusion.org/free/el/rpmfusion-free-release-$(rpm -E %rhel).noarch.rpm || true",
-    "yum install -y ffmpeg-devel alsa-lib-devel pulseaudio-libs-devel jack-audio-connection-kit-devel fftw-devel libsndfile-devel openal-soft-devel SDL2-devel rubberband-devel || true",
+    "yum install -y ffmpeg-devel alsa-lib-devel pulseaudio-libs-devel jack-audio-connection-kit-devel fftw-devel libsndfile-devel openal-soft-devel SDL2-devel rubberband-devel pkgconf || true",
 ]
 
 [tool.cibuildwheel.macos]
@@ -77,5 +77,5 @@ before-all = [
 
 [tool.cibuildwheel.windows]
 before-all = [
-    "vcpkg install fftw3 libsamplerate libsndfile openal-soft sdl2 rubberband:x64-windows || true"
+    "vcpkg install fftw3 libsamplerate libsndfile openal-soft sdl2 rubberband"
 ]

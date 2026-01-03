@@ -764,26 +764,57 @@ endif()
 
 # Python
 if(WITH_PYTHON)
-	if(AUDASPACE_STANDALONE)
-		find_package(PythonLibs 3.2 ${PACKAGE_OPTION})
-		find_package(NumPy ${PACKAGE_OPTION})
+	# Check if we're building with scikit-build-core (which handles Python detection differently)
+	if(DEFINED SKBUILD)
+		# When using scikit-build-core, Python is already available through the build environment
+		# Try to get the variables from the scikit-build-core environment first
+		if(NOT PYTHON_INCLUDE_DIRS OR NOT PYTHON_LIBRARIES OR NOT NUMPY_INCLUDE_DIRS)
+			# Try to find Python using modern CMake approach
+			find_package(Python3 COMPONENTS Interpreter Development NumPy QUIET)
+			# Set the variables to match the old-style naming for compatibility
+			if(NOT PYTHON_INCLUDE_DIRS AND Python3_FOUND)
+				set(PYTHON_INCLUDE_DIRS ${Python3_INCLUDE_DIRS})
+			endif()
+			if(NOT PYTHON_LIBRARIES AND Python3_FOUND)
+				set(PYTHON_LIBRARIES ${Python3_LIBRARIES})
+			endif()
+			if(NOT NUMPY_INCLUDE_DIRS AND Python3_NumPy_FOUND)
+				set(NUMPY_INCLUDE_DIRS ${Python3_NumPy_INCLUDE_DIRS})
+			endif()
+			# Set flags to indicate success
+			if(Python3_FOUND AND Python3_NumPy_FOUND)
+				set(PYTHONLIBS_FOUND TRUE)
+				set(NUMPY_FOUND TRUE)
+			endif()
+		endif()
+	else()
+		# Original build system behavior
+		if(AUDASPACE_STANDALONE)
+			find_package(PythonLibs 3.2 ${PACKAGE_OPTION})
+			find_package(NumPy ${PACKAGE_OPTION})
+		endif()
 	endif()
 
 	if(PYTHONLIBS_FOUND AND NUMPY_FOUND)
 		list(APPEND INCLUDE ${PYTHON_INCLUDE_DIRS} ${NUMPY_INCLUDE_DIRS})
 
 		if(WITH_PYTHON_MODULE)
-			find_package(PythonInterp 3.2 ${PACKAGE_OPTION})
+			if(DEFINED SKBUILD)
+				# For scikit-build-core, Python interpreter should already be available
+				set(PYTHONINTERP_FOUND TRUE)
+			else()
+				find_package(PythonInterp 3.2 ${PACKAGE_OPTION})
 
-			if(NOT PYTHONINTERP_FOUND)
-				set(WITH_PYTHON_MODULE FALSE)
-				message(WARNING "Python interpreter not found, module will not be built.")
+				if(NOT PYTHONINTERP_FOUND)
+					set(WITH_PYTHON_MODULE FALSE)
+					message(WARNING "Python interpreter not found, module will not be built.")
+				endif()
 			endif()
 		endif()
 
 		set(AUDASPACE_PY_LIBRARY -laudaspace-py)
 
-		if(WIN32 AND AUDASPACE_STANDALONE)
+		if(WIN32 AND AUDASPACE_STANDALONE AND NOT DEFINED SKBUILD)
 			file(GLOB PYTHON_DLLS ${LIBRARY_PATH}/Python/bin/*.dll)
 			list(APPEND DLLS ${PYTHON_DLLS})
 		endif()
