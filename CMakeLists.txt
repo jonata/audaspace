@@ -1235,11 +1235,10 @@ if(WITH_PYTHON)
 		install(FILES ${PYTHON_HDR} DESTINATION include/audaspace/python)
 	endif()
 
-	if(WITH_PYTHON_MODULE)
+	if(WITH_PYTHON_MODULE AND Python3_FOUND AND NUMPY_FOUND)
 		# Create Python extension module for scikit-build-core
-		find_package(Python3 COMPONENTS Interpreter Development.Module REQUIRED)
 		add_library(aud MODULE ${PYTHON_SRC} ${PYTHON_HDR})
-		target_link_libraries(aud PRIVATE audaspace Python3::Module)
+		target_link_libraries(aud PRIVATE audaspace)
 		target_include_directories(aud PRIVATE ${Python3_INCLUDE_DIRS} ${NUMPY_INCLUDE_DIRS})
 		target_compile_definitions(aud PRIVATE VERSION_INFO=${AUDASPACE_LONG_VERSION})
 		if(WITH_FFTW)
@@ -1250,26 +1249,14 @@ if(WITH_PYTHON)
 		endif()
 		set_target_properties(aud PROPERTIES
 			PREFIX ""
-			SUFFIX "${Python3_SOABI}${CMAKE_SHARED_LIBRARY_SUFFIX}"
+			OUTPUT_NAME "aud"
 		)
-		install(TARGETS aud DESTINATION .)
-		
-		# Legacy setup.py system (kept for compatibility)
-		set(PYTHON_SOURCE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bindings/python)
-		configure_file(${PYTHON_SOURCE_DIRECTORY}/setup.py.in ${CMAKE_CURRENT_BINARY_DIR}/setup.py ESCAPE_QUOTES @ONLY)
-
-		if(APPLE)
-			add_custom_command(OUTPUT build COMMAND MACOSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET} ${Python3_EXECUTABLE} setup.py build DEPENDS ${PYTHON_SRC} ${PYTHON_HDR} setup.py)
-		elseif(WIN32)
-			set(ENV{VS100COMNTOOLS} $ENV{VS120COMNTOOLS})
-			add_custom_command(OUTPUT build COMMAND ${Python3_EXECUTABLE} setup.py build DEPENDS ${PYTHON_SRC} ${PYTHON_HDR} setup.py)
+		if(WIN32)
+			set_target_properties(aud PROPERTIES SUFFIX ".pyd")
 		else()
-			add_custom_command(OUTPUT build COMMAND ${Python3_EXECUTABLE} setup.py build DEPENDS ${PYTHON_SRC} ${PYTHON_HDR} setup.py)
+			set_target_properties(aud PROPERTIES SUFFIX ".so")
 		endif()
-		add_custom_target(pythonmodule ALL DEPENDS build SOURCES ${PYTHON_SOURCE_DIRECTORY}/setup.py.in ${PYTHON_SRC} ${PYTHON_HDR})
-		add_dependencies(pythonmodule audaspace)
-
-		install(CODE "EXECUTE_PROCESS(COMMAND ${Python3_EXECUTABLE} setup.py install --root=\$ENV{DESTDIR} --prefix=${CMAKE_INSTALL_PREFIX})")
+		install(TARGETS aud DESTINATION .)
 	endif()
 endif()
 
