@@ -18,12 +18,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up QEMU (Linux only)
-        if: runner.os == 'Linux'
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: all
-
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.22.0
         env:
@@ -34,12 +28,6 @@ jobs:
           CIBW_TEST_REQUIRES: pytest
           CIBW_TEST_COMMAND: python -c "import aud; print('aud module imported successfully'); sine = aud.Sound.sine(440); print('Sine wave created successfully')"
           CIBW_ENVIRONMENT_PASS_LINUX: LD_LIBRARY_PATH
-          CIBW_BEFORE_ALL_LINUX: |
-            yum install -y alsa-lib-devel pulseaudio-libs-devel jack-audio-connection-kit-devel fftw-devel libsndfile-devel openal-soft-devel SDL2-devel rubberband-devel
-          CIBW_BEFORE_ALL_MACOS: |
-            brew install fftw libsamplerate libsndfile openal-soft sdl2 rubberband
-          CIBW_BEFORE_ALL_WINDOWS: |
-            vcpkg install fftw3 libsamplerate libsndfile openal-soft sdl2 rubberband:x64-windows
 
       - name: Upload wheels
         uses: actions/upload-artifact@v4

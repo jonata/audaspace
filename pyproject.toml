@@ -64,4 +64,19 @@ WITH_PIPEWIRE = "ON"
 WITH_COREAUDIO = "ON"
 WITH_WASAPI = "ON"
 
-[tool.setuptools_scm]
+[tool.cibuildwheel.linux]
+before-all = [
+    "yum install -y https://download1.rpmfusion.org/free/el/rpmfusion-free-release-$(rpm -E %rhel).noarch.rpm || true",
+    "yum install -y alsa-lib-devel pulseaudio-libs-devel jack-audio-connection-kit-devel fftw-devel libsndfile-devel openal-soft-devel SDL2-devel rubberband-devel || true",
+    "dnf install -y ninja-build"
+]
+
+[tool.cibuildwheel.macos]
+before-all = [
+    "brew install fftw libsamplerate libsndfile openal-soft sdl2 rubberband || true",
+]
+
+[tool.cibuildwheel.windows]
+before-all = [
+    "vcpkg install fftw3 libsamplerate libsndfile openal-soft sdl2 rubberband:x64-windows || true"
+]
