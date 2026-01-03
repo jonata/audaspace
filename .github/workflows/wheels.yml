@@ -37,6 +37,16 @@ jobs:
           path: ./wheelhouse/*.whl
           name: wheels-${{ matrix.os }}
 
+      - name: List wheel contents
+        shell: bash
+        run: |
+          echo "Listing wheel contents:"
+          for wheel in ./wheelhouse/*.whl; do
+            echo "=== Contents of $wheel ==="
+            unzip -l "$wheel"
+            echo
+          done
+
   test_wheels:
     name: Test wheels on ${{ matrix.os }}
     needs: build_wheels

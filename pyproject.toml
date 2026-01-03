@@ -93,11 +93,7 @@ WITH_PIPEWIRE = "OFF"
 
 [tool.cibuildwheel.windows]
 before-all = [
-    "vcpkg install fftw3 libsamplerate libsndfile openal-soft sdl2 rubberband",
-    "git clone https://github.com/FFmpeg/FFmpeg.git C:\\ffmpeg-src",
-    "cd C:\\ffmpeg-src && git checkout n7.1",
-    "cd C:\\ffmpeg-src && .\\configure --toolchain=msvc --enable-shared --disable-programs --disable-doc --disable-avdevice --disable-postproc --disable-avfilter --disable-network --prefix=C:\\ffmpeg",
-    "cd C:\\ffmpeg-src && make -j4 && make install"
+    "vcpkg install fftw3 libsamplerate libsndfile openal-soft sdl2 rubberband ffmpeg"
 ]
 [tool.cibuildwheel.windows.environment]
 CMAKE_TOOLCHAIN_FILE = "C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
