@@ -964,20 +964,40 @@ add_library(audaspace ${LIBRARY_TYPE} ${SRC} ${HDR})
 target_link_libraries(audaspace ${LIBRARIES})
 set_target_properties(audaspace PROPERTIES SOVERSION ${AUDASPACE_VERSION})
 
-if(AUDASPACE_STANDALONE)
+if(DEFINED SKBUILD)
+	# For scikit-build-core (self-contained wheels), install the main library to the same directory as Python module
+	install(TARGETS audaspace
+		LIBRARY DESTINATION .
+		RUNTIME DESTINATION .
+		ARCHIVE DESTINATION .
+	)
+	# Set RPATH for the main library to look for other libraries in the same directory
+	set_target_properties(audaspace PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
+	if(APPLE)
+		set_target_properties(audaspace PROPERTIES INSTALL_RPATH "@loader_path")
+	elseif(UNIX)
+		set_target_properties(audaspace PROPERTIES INSTALL_RPATH "$ORIGIN")
+	endif()
+elseif(AUDASPACE_STANDALONE)
 	install(TARGETS audaspace
 		RUNTIME DESTINATION ${BIN_DESTINATION}
 		LIBRARY DESTINATION ${LIB_DESTINATION}
 		ARCHIVE DESTINATION ${LIB_DESTINATION}
 	)
+endif()
 
-	install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/ DESTINATION include/audaspace)
-	install(FILES ${CMAKE_CURRENT_BINARY_DIR}/Audaspace.h DESTINATION include/audaspace)
+	if(DEFINED SKBUILD)
+		# For scikit-build-core, don't install headers since this is for a self-contained wheel
+		# Headers are not needed in the wheel for end users
+	else()
+		install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/ DESTINATION include/audaspace)
+		install(FILES ${CMAKE_CURRENT_BINARY_DIR}/Audaspace.h DESTINATION include/audaspace)
 
-	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/packages/pkgconfig/audaspace.pc.in ${CMAKE_CURRENT_BINARY_DIR}/audaspace.pc @ONLY)
+		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/packages/pkgconfig/audaspace.pc.in ${CMAKE_CURRENT_BINARY_DIR}/audaspace.pc @ONLY)
 
-	if(NOT WIN32 AND NOT APPLE)
-		install(FILES ${CMAKE_CURRENT_BINARY_DIR}/audaspace.pc DESTINATION "lib${LIB_SUFFIX}/pkgconfig")
+		if(NOT WIN32 AND NOT APPLE)
+			install(FILES ${CMAKE_CURRENT_BINARY_DIR}/audaspace.pc DESTINATION "lib${LIB_SUFFIX}/pkgconfig")
+		endif()
 	endif()
 endif()
 
@@ -1314,7 +1334,14 @@ if(WITH_PYTHON)
 			set_target_properties(aud PROPERTIES SUFFIX ".so")
 		endif()
 		# For scikit-build-core, we need to make sure dependencies are properly linked
-		target_link_libraries(aud audaspace ${PYTHON_LIBRARIES})
+		# On Windows, we may need to handle Python library linking differently
+		if(WIN32)
+			# For Windows, try to find Python libraries using modern CMake
+			find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+			target_link_libraries(aud audaspace ${Python3_LIBRARIES})
+		else()
+			target_link_libraries(aud audaspace ${PYTHON_LIBRARIES})
+		endif()
 		# Include Python headers
 		include_directories(${PYTHON_INCLUDE_DIRS} ${NUMPY_INCLUDE_DIRS})
 		# Set C++ standard
@@ -1330,20 +1357,18 @@ if(WITH_PYTHON)
 			RUNTIME DESTINATION .
 		)
 		# Set RPATH to look for libraries in the same directory as the module
-		set_target_properties(aud PROPERTIES INSTALL_RPATH "$ORIGIN")
-		set_target_properties(aud PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
+		# On Windows, RPATH is not used
+		if(WIN32)
+			# On Windows, we don't use RPATH, but DLLs should be in the same directory
+		else()
+			set_target_properties(aud PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
 
-		# Also set RPATH for the main library itself to make it self-contained
-		set_target_properties(audaspace PROPERTIES INSTALL_RPATH "$ORIGIN")
-		set_target_properties(audaspace PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
-
-		# Set RPATH for the Python module to look for libraries in the same directory
-		if(APPLE)
-			set_target_properties(aud PROPERTIES INSTALL_RPATH "@loader_path")
-			set_target_properties(audaspace PROPERTIES INSTALL_RPATH "@loader_path")
-		elseif(UNIX)
-			set_target_properties(aud PROPERTIES INSTALL_RPATH "$ORIGIN")
-			set_target_properties(audaspace PROPERTIES INSTALL_RPATH "$ORIGIN")
+			# On macOS, use @loader_path instead of $ORIGIN
+			if(APPLE)
+				set_target_properties(aud PROPERTIES INSTALL_RPATH "@loader_path")
+			elseif(UNIX)
+				set_target_properties(aud PROPERTIES INSTALL_RPATH "$ORIGIN")
+			endif()
 		endif()
 	else()
 		# Original build system behavior

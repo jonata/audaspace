@@ -67,7 +67,7 @@ WITH_WASAPI = "ON"
 [tool.cibuildwheel.linux]
 before-all = [
     "yum install -y https://download1.rpmfusion.org/free/el/rpmfusion-free-release-$(rpm -E %rhel).noarch.rpm || true",
-    "yum install -y alsa-lib-devel pulseaudio-libs-devel jack-audio-connection-kit-devel fftw-devel libsndfile-devel openal-soft-devel SDL2-devel rubberband-devel || true",
+    "yum install -y ffmpeg-devel alsa-lib-devel pulseaudio-libs-devel jack-audio-connection-kit-devel fftw-devel libsndfile-devel openal-soft-devel SDL2-devel rubberband-devel || true",
 ]
 
 [tool.cibuildwheel.macos]
