@@ -59,10 +59,6 @@ WITH_LIBSNDFILE = "ON"
 WITH_OPENAL = "ON"
 WITH_RUBBERBAND = "ON"
 WITH_SDL = "ON"
-WITH_PULSEAUDIO = "ON"
-WITH_PIPEWIRE = "ON"
-WITH_COREAUDIO = "ON"
-WITH_WASAPI = "ON"
 
 [tool.cibuildwheel.linux]
 before-all = [
