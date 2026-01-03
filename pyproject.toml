@@ -68,7 +68,6 @@ WITH_WASAPI = "ON"
 before-all = [
     "yum install -y https://download1.rpmfusion.org/free/el/rpmfusion-free-release-$(rpm -E %rhel).noarch.rpm || true",
     "yum install -y alsa-lib-devel pulseaudio-libs-devel jack-audio-connection-kit-devel fftw-devel libsndfile-devel openal-soft-devel SDL2-devel rubberband-devel || true",
-    "dnf install -y ninja-build"
 ]
 
 [tool.cibuildwheel.macos]
