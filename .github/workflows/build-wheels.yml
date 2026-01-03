@@ -1,0 +1,203 @@
+name: Build and Test Python Wheels
+
+on:
+  push:
+    branches: [ github-actions-tests ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-24.04, windows-2025, macos-15, macos-15-intel]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install cibuildwheel
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install cibuildwheel==2.16.2
+
+      # Install system dependencies for Linux
+      - name: Install system dependencies (Linux)
+        if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev libpulse-dev libpipewire-0.3-dev libsndfile1-dev libavcodec-dev libavformat-dev libavutil-dev libswresample-dev libavfilter-dev libfftw3-dev libopenal-dev libjack-jackd2-dev libsdl2-dev
+
+      # Install system dependencies for macOS
+      - name: Install system dependencies (macOS)
+        if: startsWith(matrix.os, 'macos')
+        run: |
+          brew install fftw jack libsdl2 libsndfile openal-soft pulseaudio
+
+      # Install system dependencies for Windows
+      - name: Install system dependencies (Windows)
+        if: startsWith(matrix.os, 'windows')
+        run: |
+          # Install dependencies via vcpkg or other methods
+          # For now, we'll rely on the bundled libraries in the project
+          echo "Installing Windows dependencies..."
+
+      # Update pyproject.toml to include cibuildwheel configuration
+      - name: Update pyproject.toml with cibuildwheel config
+        shell: bash
+        run: |
+          cat >> pyproject.toml << 'EOF'
+
+          [tool.cibuildwheel]
+          # Build for all platforms
+          build = ["cp38-*", "cp39-*", "cp310-*", "cp311-*", "cp312-*"]
+          skip = ["*musllinux*"]
+
+          [tool.cibuildwheel.linux]
+          archs = ["x86_64", "aarch64"]
+
+          [tool.cibuildwheel.macos]
+          archs = ["x86_64", "arm64"]
+
+          [tool.cibuildwheel.windows]
+          archs = ["AMD64", "ARM64"]
+
+          # Environment variables for building
+          [tool.cibuildwheel.environment]
+          CMAKE_BUILD_PARALLEL_LEVEL = "4"
+          
+          [tool.cibuildwheel.linux.environment]
+          AUDASPACE_STANDALONE = "ON"
+          
+          [tool.cibuildwheel.macos.environment]
+          MACOSX_DEPLOYMENT_TARGET = "10.9"
+          AUDASPACE_STANDALONE = "ON"
+          
+          [tool.cibuildwheel.windows.environment]
+          AUDASPACE_STANDALONE = "ON"
+
+          # Configure build to bundle dependencies
+          [tool.cibuildwheel.linux.before-build]
+          # Install system dependencies for Linux
+          commands = [
+              "yum install -y alsa-lib-devel pulseaudio-libs-devel"  # For CentOS/RHEL
+          ]
+          EOF
+
+      - name: Build wheels
+        run: |
+          python -m cibuildwheel --output-dir dist
+        env:
+          CIBW_ARCHS_MACOS: "x86_64 arm64"
+          CIBW_ARCHS_LINUX: "x86_64 aarch64"
+          CIBW_ARCHS_WINDOWS: "AMD64 ARM64"
+          CIBW_BUILD_FRONTEND: "scikit-build-core"
+
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.os }}
+          path: dist/*.whl
+
+  test_wheels:
+    name: Test wheels on ${{ matrix.os }}
+    needs: build_wheels
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-24.04, windows-2025, macos-15, macos-15-intel]
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Download wheels
+        uses: actions/download-artifact@v4
+        with:
+          name: wheels-${{ matrix.os }}
+          path: dist/
+
+      - name: Install wheel and dependencies
+        run: |
+          python -m pip install --find-links dist --no-index audaspace
+
+      - name: Test import
+        run: |
+          python -c "import aud; print('Successfully imported aud module')"
+          
+      - name: Test basic functionality
+        run: |
+          python -c "
+          import aud
+          print('Testing aud.Device()...')
+          try:
+              device = aud.Device()
+              print(f'Device created: {device}')
+              print('Device test passed')
+          except Exception as e:
+              print(f'Device test failed: {e}')
+              exit(1)
+          "
+          
+      - name: Test audio generation
+        run: |
+          python -c "
+          import aud
+          print('Testing audio generation...')
+          try:
+              # Create a simple sine wave
+              sine = aud.Sine(440.0)  # 440Hz sine wave
+              print(f'Sine wave created: {sine}')
+              
+              # Create a device and play
+              device = aud.Device()
+              print('Playing sine wave for 1 second...')
+              handle = device.play(sine)
+              
+              # Wait for a bit
+              import time
+              time.sleep(1)
+              
+              # Stop playback
+              if handle and handle.isPlaying():
+                  handle.stop()
+              
+              print('Audio generation test passed')
+          except Exception as e:
+              print(f'Audio generation test failed: {e}')
+              import traceback
+              traceback.print_exc()
+          "
+
+  upload_pypi:
+    name: Upload to PyPI
+    needs: [build_wheels, test_wheels]
+    runs-on: ubuntu-24.04
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Download all wheels
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/
+          pattern: wheels-*
+          merge-multiple: true
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          packages-dir: dist/
