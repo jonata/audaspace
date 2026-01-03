@@ -1336,9 +1336,21 @@ if(WITH_PYTHON)
 		# For scikit-build-core, we need to make sure dependencies are properly linked
 		# On Windows, we may need to handle Python library linking differently
 		if(WIN32)
-			# For Windows, try to find Python libraries using modern CMake
-			find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
-			target_link_libraries(aud audaspace ${Python3_LIBRARIES})
+			# For Windows, scikit-build-core should provide Python libraries through the build environment
+			# If PYTHON_LIBRARIES is not set, try to find them using modern CMake
+			if(PYTHON_LIBRARIES)
+				target_link_libraries(aud audaspace ${PYTHON_LIBRARIES})
+			else()
+				# In scikit-build-core environment, Python libraries should be available
+				# Use the variables that should be set by the build environment
+				if(DEFINED Python3_LIBRARIES)
+					target_link_libraries(aud audaspace ${Python3_LIBRARIES})
+				else()
+					# Last resort: try to find Python again
+					find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+					target_link_libraries(aud audaspace ${Python3_LIBRARIES})
+				endif()
+			endif()
 		else()
 			target_link_libraries(aud audaspace ${PYTHON_LIBRARIES})
 		endif()
