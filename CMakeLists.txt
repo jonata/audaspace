@@ -765,7 +765,11 @@ endif()
 # Python
 if(WITH_PYTHON)
 	if(AUDASPACE_STANDALONE)
-		find_package(Python3 3.2 COMPONENTS Interpreter Development.Module ${PACKAGE_OPTION})
+		find_package(Python3 3.2 COMPONENTS Interpreter Development ${PACKAGE_OPTION})
+		if(NOT Python3_FOUND)
+			# Fallback: try without Development component
+			find_package(Python3 3.2 COMPONENTS Interpreter ${PACKAGE_OPTION})
+		endif()
 		find_package(NumPy ${PACKAGE_OPTION})
 	endif()
 
