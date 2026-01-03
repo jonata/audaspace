@@ -68,8 +68,10 @@ WITH_WASAPI = "ON"
 before-all = [
     "yum install -y epel-release",
     "yum install -y https://download1.rpmfusion.org/free/el/rpmfusion-free-release-$(rpm -E %rhel).noarch.rpm || true",
-    "yum install -y ffmpeg-devel fftw-devel libsndfile-devel openal-soft-devel SDL2-devel alsa-lib-devel pulseaudio-libs-devel jack-audio-connection-kit-devel pipewire-devel pkgconfig python3-devel git cmake3 make gcc-c++ python3-pip",
+    "yum install -y ffmpeg-devel fftw-devel libsndfile-devel openal-soft-devel SDL2-devel alsa-lib-devel pulseaudio-libs-devel jack-audio-connection-kit-devel pkgconfig python3-devel git cmake3 make gcc-c++ python3-pip",
     "pip3 install meson ninja",
+    "git clone https://github.com/PipeWire/pipewire.git /tmp/pipewire",
+    "cd /tmp/pipewire && git checkout 1.2.7 && meson setup build --prefix=/usr -Ddocs=disabled -Dtests=disabled -Dexamples=disabled && meson compile -C build && meson install -C build",
     "git clone https://github.com/breakfastquay/rubberband.git /tmp/rubberband",
     "cd /tmp/rubberband && git checkout v3.3.0 && meson setup build --prefix=/usr && meson compile -C build && meson install -C build",
     "pip install numpy",
@@ -77,6 +79,7 @@ before-all = [
 [tool.cibuildwheel.linux.environment]
 PKG_CONFIG_PATH = "/usr/lib64/pkgconfig:/usr/lib/pkgconfig:/usr/share/pkgconfig"
 CMAKE_PREFIX_PATH = "/usr:/usr/local"
+[tool.cibuildwheel.linux.cmake.define]
 WITH_WASAPI = "OFF"
 WITH_COREAUDIO = "OFF"
 
@@ -88,6 +91,7 @@ before-all = [
 [tool.cibuildwheel.macos.environment]
 PKG_CONFIG_PATH = "/opt/homebrew/lib/pkgconfig:/usr/local/lib/pkgconfig"
 CMAKE_PREFIX_PATH = "/opt/homebrew:/usr/local"
+[tool.cibuildwheel.macos.cmake.define]
 WITH_WASAPI = "OFF"
 WITH_PULSEAUDIO = "OFF"
 WITH_PIPEWIRE = "OFF"
@@ -99,5 +103,8 @@ before-all = [
 ]
 [tool.cibuildwheel.windows.environment]
 CMAKE_TOOLCHAIN_FILE = "C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
-WITH_COREAUDIO = "ON"
+[tool.cibuildwheel.windows.cmake.define]
+WITH_COREAUDIO = "OFF"
+WITH_PULSEAUDIO = "OFF"
+WITH_PIPEWIRE = "OFF"
 
