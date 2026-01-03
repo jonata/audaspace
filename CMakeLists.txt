@@ -991,6 +991,9 @@ if(WITH_COREAUDIO AND PLUGIN_COREAUDIO)
 		set_target_properties(audcoreaudio PROPERTIES SOVERSION ${AUDASPACE_VERSION})
 	endif()
 	target_link_libraries(audcoreaudio audaspace ${COREAUDIO_LIBRARIES})
+	# Set RPATH for plugins to look for the main library in the same directory
+	set_target_properties(audcoreaudio PROPERTIES INSTALL_RPATH "$ORIGIN")
+	set_target_properties(audcoreaudio PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
 	install(TARGETS audcoreaudio DESTINATION ${DEFAULT_PLUGIN_PATH})
 endif()
 
@@ -999,6 +1002,9 @@ if(WITH_FFMPEG AND PLUGIN_FFMPEG)
 	include_directories(${INCLUDE} ${FFMPEG_INCLUDE_DIRS})
 	add_library(audffmpeg SHARED ${FFMPEG_SRC} ${FFMPEG_HDR} ${HDR})
 	target_link_libraries(audffmpeg audaspace ${FFMPEG_LIBRARIES})
+	# Set RPATH for plugins to look for the main library in the same directory
+	set_target_properties(audffmpeg PROPERTIES INSTALL_RPATH "$ORIGIN")
+	set_target_properties(audffmpeg PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
 	if(WITH_VERSIONED_PLUGINS)
 		set_target_properties(audffmpeg PROPERTIES SOVERSION ${AUDASPACE_VERSION})
 	endif()
@@ -1014,6 +1020,9 @@ if(WITH_JACK AND PLUGIN_JACK)
 	else()
 		target_link_libraries(audjack audaspace ${JACK_LIBRARIES})
 	endif()
+	# Set RPATH for plugins to look for the main library in the same directory
+	set_target_properties(audjack PROPERTIES INSTALL_RPATH "$ORIGIN")
+	set_target_properties(audjack PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
 	if(WITH_VERSIONED_PLUGINS)
 		set_target_properties(audjack PROPERTIES SOVERSION ${AUDASPACE_VERSION})
 	endif()
@@ -1028,6 +1037,9 @@ if(WITH_LIBSNDFILE AND PLUGIN_LIBSNDFILE)
 		set_target_properties(audlibsndfile PROPERTIES SOVERSION ${AUDASPACE_VERSION})
 	endif()
 	target_link_libraries(audlibsndfile audaspace ${LIBSNDFILE_LIBRARIES})
+	# Set RPATH for plugins to look for the main library in the same directory
+	set_target_properties(audlibsndfile PROPERTIES INSTALL_RPATH "$ORIGIN")
+	set_target_properties(audlibsndfile PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
 	install(TARGETS audlibsndfile DESTINATION ${DEFAULT_PLUGIN_PATH})
 endif()
 
@@ -1039,6 +1051,9 @@ if(WITH_OPENAL AND PLUGIN_OPENAL)
 		set_target_properties(audopenal PROPERTIES SOVERSION ${AUDASPACE_VERSION})
 	endif()
 	target_link_libraries(audopenal audaspace ${OPENAL_LIBRARY})
+	# Set RPATH for plugins to look for the main library in the same directory
+	set_target_properties(audopenal PROPERTIES INSTALL_RPATH "$ORIGIN")
+	set_target_properties(audopenal PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
 	install(TARGETS audopenal DESTINATION ${DEFAULT_PLUGIN_PATH})
 endif()
 
@@ -1054,6 +1069,9 @@ if(WITH_PULSEAUDIO AND PLUGIN_PULSEAUDIO)
 	else()
 		target_link_libraries(audpulseaudio audaspace ${LIBPULSE_LIBRARY})
 	endif()
+	# Set RPATH for plugins to look for the main library in the same directory
+	set_target_properties(audpulseaudio PROPERTIES INSTALL_RPATH "$ORIGIN")
+	set_target_properties(audpulseaudio PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
 	install(TARGETS audpulseaudio DESTINATION ${DEFAULT_PLUGIN_PATH})
 endif()
 
@@ -1069,6 +1087,9 @@ if(WITH_PIPEWIRE AND PLUGIN_PIPEWIRE)
 	else()
 		target_link_libraries(audpipewire audaspace ${PIPEWIRE_LIBRARIES})
 	endif()
+	# Set RPATH for plugins to look for the main library in the same directory
+	set_target_properties(audpipewire PROPERTIES INSTALL_RPATH "$ORIGIN")
+	set_target_properties(audpipewire PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
 	install(TARGETS audpipewire DESTINATION ${DEFAULT_PLUGIN_PATH})
 endif()
 
@@ -1080,6 +1101,9 @@ if(WITH_SDL AND PLUGIN_SDL)
 		set_target_properties(audsdl PROPERTIES SOVERSION ${AUDASPACE_VERSION})
 	endif()
 	target_link_libraries(audsdl audaspace ${SDL_LIBRARY})
+	# Set RPATH for plugins to look for the main library in the same directory
+	set_target_properties(audsdl PROPERTIES INSTALL_RPATH "$ORIGIN")
+	set_target_properties(audsdl PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
 	install(TARGETS audsdl DESTINATION ${DEFAULT_PLUGIN_PATH})
 endif()
 
@@ -1091,6 +1115,9 @@ if(WITH_WASAPI AND PLUGIN_WASAPI AND WIN32)
 		set_target_properties(audwasapi PROPERTIES SOVERSION ${AUDASPACE_VERSION})
 	endif()
 	target_link_libraries(audwasapi audaspace ksuser)
+	# Set RPATH for plugins to look for the main library in the same directory
+	set_target_properties(audwasapi PROPERTIES INSTALL_RPATH "$ORIGIN")
+	set_target_properties(audwasapi PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
 	install(TARGETS audwasapi DESTINATION ${DEFAULT_PLUGIN_PATH})
 endif()
 
@@ -1247,6 +1274,10 @@ if(WITH_PYTHON)
 		# Set RPATH to look for libraries in the same directory as the module
 		set_target_properties(aud PROPERTIES INSTALL_RPATH "$ORIGIN")
 		set_target_properties(aud PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
+
+		# Also set RPATH for the main library itself to make it self-contained
+		set_target_properties(audaspace PROPERTIES INSTALL_RPATH "$ORIGIN")
+		set_target_properties(audaspace PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
 	else()
 		# Original build system behavior
 		add_library(audaspace-py ${LIBRARY_TYPE} ${PYTHON_SRC} ${PYTHON_HDR})

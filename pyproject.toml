@@ -46,6 +46,10 @@ expand-macos-universal-tags = true
 py-api = "py3"
 packages = ["aud"]
 
+[tool.scikit-build.macos]
+# Use newer deployment target for better compatibility
+deployment-target = "15.0"
+
 [tool.scikit-build.cmake.define]
 AUDASPACE_STANDALONE = "ON"
 WITH_PYTHON = "ON"
@@ -54,13 +58,13 @@ SHARED_LIBRARY = "ON"
 WITH_C = "ON"
 WITH_FFMPEG = "ON"
 WITH_FFTW = "ON"
-WITH_JACK = "OFF"  # Disable JACK for self-contained builds
+WITH_JACK = "ON"
 WITH_LIBSNDFILE = "ON"
 WITH_OPENAL = "ON"
 WITH_RUBBERBAND = "ON"
 WITH_SDL = "ON"
-WITH_PULSEAUDIO = "OFF"  # Disable PulseAudio for self-contained builds
-WITH_PIPEWIRE = "OFF"    # Disable PipeWire for self-contained builds
+WITH_PULSEAUDIO = "ON"
+WITH_PIPEWIRE = "ON"
 WITH_COREAUDIO = "ON"
 WITH_WASAPI = "ON"
 
