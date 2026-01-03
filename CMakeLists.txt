@@ -984,20 +984,14 @@ elseif(AUDASPACE_STANDALONE)
 		LIBRARY DESTINATION ${LIB_DESTINATION}
 		ARCHIVE DESTINATION ${LIB_DESTINATION}
 	)
-endif()
+else()
+	install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/ DESTINATION include/audaspace)
+	install(FILES ${CMAKE_CURRENT_BINARY_DIR}/Audaspace.h DESTINATION include/audaspace)
 
-	if(DEFINED SKBUILD)
-		# For scikit-build-core, don't install headers since this is for a self-contained wheel
-		# Headers are not needed in the wheel for end users
-	else()
-		install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/ DESTINATION include/audaspace)
-		install(FILES ${CMAKE_CURRENT_BINARY_DIR}/Audaspace.h DESTINATION include/audaspace)
+	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/packages/pkgconfig/audaspace.pc.in ${CMAKE_CURRENT_BINARY_DIR}/audaspace.pc @ONLY)
 
-		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/packages/pkgconfig/audaspace.pc.in ${CMAKE_CURRENT_BINARY_DIR}/audaspace.pc @ONLY)
-
-		if(NOT WIN32 AND NOT APPLE)
-			install(FILES ${CMAKE_CURRENT_BINARY_DIR}/audaspace.pc DESTINATION "lib${LIB_SUFFIX}/pkgconfig")
-		endif()
+	if(NOT WIN32 AND NOT APPLE)
+		install(FILES ${CMAKE_CURRENT_BINARY_DIR}/audaspace.pc DESTINATION "lib${LIB_SUFFIX}/pkgconfig")
 	endif()
 endif()
 
