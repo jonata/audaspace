@@ -47,8 +47,8 @@ if '@WITH_RUBBERBAND@' == 'ON':
 audaspace = Extension(
                       'aud',
                       include_dirs = ['@CMAKE_CURRENT_BINARY_DIR@', os.path.join(source_directory, '../../include'), numpy.get_include()] + (['@FFTW_INCLUDE_DIR@'] if '@WITH_FFTW@' == 'ON' else []),
-                      libraries = ['audaspace'],
-                      library_dirs = ['.', 'Release', 'Debug'],
+                      libraries = [] if '@SHARED_LIBRARY@' == 'OFF' else ['audaspace'],
+                      library_dirs = ['.', 'Release', 'Debug'] if '@SHARED_LIBRARY@' == 'ON' else [],
                       language = 'c++',
                       extra_compile_args = extra_args,
                       define_macros = macros,
