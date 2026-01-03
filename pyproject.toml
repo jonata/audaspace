@@ -44,6 +44,7 @@ sdist.exclude = [".gitignore", "*.pyc", "__pycache__/", ".git/", "build/"]
 expand-macos-universal-tags = false
 py-api = "py3"
 packages = ["aud"]
+exclude = ["include/**"]
 
 
 [tool.scikit-build.cmake.define]
