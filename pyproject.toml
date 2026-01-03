@@ -41,14 +41,10 @@ cmake.verbose = true
 sdist.exclude = [".gitignore", "*.pyc", "__pycache__/", ".git/", "build/"]
 
 [tool.scikit-build.wheel]
-# Build wheels for all platforms
 expand-macos-universal-tags = true
 py-api = "py3"
 packages = ["aud"]
 
-[tool.scikit-build.macos]
-# Use newer deployment target for better compatibility
-deployment-target = "15.0"
 
 [tool.scikit-build.cmake.define]
 AUDASPACE_STANDALONE = "ON"
