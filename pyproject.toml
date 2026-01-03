@@ -41,7 +41,7 @@ build.verbose = true
 sdist.exclude = [".gitignore", "*.pyc", "__pycache__/", ".git/", "build/"]
 
 [tool.scikit-build.wheel]
-expand-macos-universal-tags = true
+expand-macos-universal-tags = false
 py-api = "py3"
 packages = ["aud"]
 
