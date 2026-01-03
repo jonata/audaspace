@@ -1,0 +1,105 @@
+[build-system]
+requires = [
+    "scikit-build-core >=0.3.3",
+    "pybind11 >=2.10.0",
+    "numpy >=1.21.0",
+]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "audaspace"
+version = "1.8.0"
+description = "Audaspace is a high level audio library."
+authors = [
+    {name = "Jörg Müller", email = "nexyon@gmail.com"},
+]
+readme = "README.md"
+license = {text = "Apache-2.0"}
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+requires-python = ">=3.8"
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/audaspace/audaspace"
+Repository = "https://github.com/audaspace/audaspace"
+
+[tool.scikit-build]
+wheel.expand-macos-universal-tags = true
+cmake.build-type = "Release"
+cmake.verbose = true
+wheel.py-api = "py3"
+
+[tool.scikit-build.cmake.define]
+WITH_PYTHON = "ON"
+WITH_PYTHON_MODULE = "ON"
+SHARED_LIBRARY = "ON"
+AUDASPACE_STANDALONE = "ON"
+WITH_FFMPEG = "ON"
+WITH_FFTW = "ON"
+WITH_JACK = "ON"
+WITH_LIBSNDFILE = "ON"
+WITH_OPENAL = "ON"
+WITH_RUBBERBAND = "ON"
+WITH_SDL = "ON"
+WITH_PULSEAUDIO = "ON"
+WITH_PIPEWIRE = "ON"
+WITH_COREAUDIO = "ON"
+WITH_WASAPI = "ON"
+
+# Platform-specific options
+[tool.scikit-build.cmake.define."WIN32"]
+WITH_WASAPI = "ON"
+
+[tool.scikit-build.cmake.define."APPLE"]
+WITH_COREAUDIO = "ON"
+
+[tool.scikit-build.cmake.define."UNIX"]
+WITH_PULSEAUDIO = "ON"
+WITH_PIPEWIRE = "ON"
+
+[tool.cibuildwheel]
+# Build for all platforms
+build = ["cp38-*", "cp39-*", "cp310-*", "cp311-*", "cp312-*"]
+skip = ["*musllinux*"]
+
+[tool.cibuildwheel.linux]
+archs = ["x86_64", "aarch64"]
+# Bundle all shared libraries into the wheel
+repair-wheel-command = "auditwheel repair -w {dest_dir} {wheel} --strip"
+before-build = "yum install -y https://download1.rpmfusion.org/free/el/rpmfusion-free-release-$(rpm -E %rhel).noarch.rpm && yum install -y alsa-lib-devel pulseaudio-libs-devel pipewire-devel libsndfile-devel ffmpeg-devel fftw-devel openal-soft-devel jack-audio-connection-kit-devel SDL2-devel || yum install -y alsa-lib-devel pulseaudio-libs-devel pipewire-devel libsndfile-devel ffmpeg4libs-devel fftw-devel openal-soft-devel jack-audio-connection-kit-devel SDL2-devel || dnf install -y alsa-lib-devel pulseaudio-libs-devel pipewire-devel libsndfile-devel ffmpeg-free-devel fftw-devel openal-soft-devel jack-audio-connection-kit-devel SDL2-devel || apt-get update -y && apt-get install -y libasound2-dev libpulse-dev libpipewire-0.3-dev libsndfile1-dev libavcodec-dev libavformat-dev libavutil-dev libswresample-dev libavfilter-dev libfftw3-dev libopenal-dev libjack-jackd2-dev libsdl2-dev"
+
+[tool.cibuildwheel.macos]
+archs = ["x86_64", "arm64"]
+# Bundle all shared libraries into the wheel
+repair-wheel-command = "delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel} --strip"
+before-build = "brew install fftw jack libsdl2 libsndfile openal-soft pulseaudio"
+
+[tool.cibuildwheel.windows]
+archs = ["AMD64", "ARM64"]
+before-build = "echo Installing Windows dependencies via vcpkg or similar tools"
+
+# Environment variables for building
+[tool.cibuildwheel.environment]
+CMAKE_BUILD_PARALLEL_LEVEL = "4"
+SCIKIT_BUILD_CMAKE_ARGS = "-DCMAKE_BUILD_TYPE=Release -DWITH_PYTHON=ON -DWITH_PYTHON_MODULE=ON -DSHARED_LIBRARY=ON -DAUDASPACE_STANDALONE=ON"
+
+[tool.cibuildwheel.linux.environment]
+AUDASPACE_STANDALONE = "ON"
+
+[tool.cibuildwheel.macos.environment]
+MACOSX_DEPLOYMENT_TARGET = "10.9"
+AUDASPACE_STANDALONE = "ON"
+
+[tool.cibuildwheel.windows.environment]
+AUDASPACE_STANDALONE = "ON"
