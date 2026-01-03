@@ -1237,8 +1237,9 @@ if(WITH_PYTHON)
 
 	if(WITH_PYTHON_MODULE)
 		# Create Python extension module for scikit-build-core
-		python_add_library(aud MODULE ${PYTHON_SRC} ${PYTHON_HDR})
-		target_link_libraries(aud PRIVATE audaspace ${Python3_LIBRARIES})
+		find_package(Python3 COMPONENTS Interpreter Development.Module REQUIRED)
+		add_library(aud MODULE ${PYTHON_SRC} ${PYTHON_HDR})
+		target_link_libraries(aud PRIVATE audaspace Python3::Module)
 		target_include_directories(aud PRIVATE ${Python3_INCLUDE_DIRS} ${NUMPY_INCLUDE_DIRS})
 		target_compile_definitions(aud PRIVATE VERSION_INFO=${AUDASPACE_LONG_VERSION})
 		if(WITH_FFTW)
@@ -1247,6 +1248,10 @@ if(WITH_PYTHON)
 		if(WITH_RUBBERBAND)
 			target_compile_definitions(aud PRIVATE WITH_RUBBERBAND)
 		endif()
+		set_target_properties(aud PROPERTIES
+			PREFIX ""
+			SUFFIX "${Python3_SOABI}${CMAKE_SHARED_LIBRARY_SUFFIX}"
+		)
 		install(TARGETS aud DESTINATION .)
 		
 		# Legacy setup.py system (kept for compatibility)
