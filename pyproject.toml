@@ -49,7 +49,7 @@ packages = ["aud"]
 [tool.scikit-build.cmake.define]
 AUDASPACE_STANDALONE = "ON"
 WITH_PYTHON = "ON"
-WITH_PYTHON_MODULE = "ON"
+WITH_PYTHON_MODULE = "OFF"
 SHARED_LIBRARY = "OFF"
 WITH_C = "ON"
 WITH_FFMPEG = "ON"
