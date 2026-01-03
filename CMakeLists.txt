@@ -14,7 +14,7 @@
 # limitations under the License.
 ################################################################################
 
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.31)
 include(CMakeDependentOption)
 
 if(POLICY CMP0054)
@@ -764,57 +764,26 @@ endif()
 
 # Python
 if(WITH_PYTHON)
-	# Check if we're building with scikit-build-core (which handles Python detection differently)
-	if(DEFINED SKBUILD)
-		# When using scikit-build-core, Python is already available through the build environment
-		# Try to get the variables from the scikit-build-core environment first
-		if(NOT PYTHON_INCLUDE_DIRS OR NOT PYTHON_LIBRARIES OR NOT NUMPY_INCLUDE_DIRS)
-			# Try to find Python using modern CMake approach
-			find_package(Python3 COMPONENTS Interpreter Development NumPy QUIET)
-			# Set the variables to match the old-style naming for compatibility
-			if(NOT PYTHON_INCLUDE_DIRS AND Python3_FOUND)
-				set(PYTHON_INCLUDE_DIRS ${Python3_INCLUDE_DIRS})
-			endif()
-			if(NOT PYTHON_LIBRARIES AND Python3_FOUND)
-				set(PYTHON_LIBRARIES ${Python3_LIBRARIES})
-			endif()
-			if(NOT NUMPY_INCLUDE_DIRS AND Python3_NumPy_FOUND)
-				set(NUMPY_INCLUDE_DIRS ${Python3_NumPy_INCLUDE_DIRS})
-			endif()
-			# Set flags to indicate success
-			if(Python3_FOUND AND Python3_NumPy_FOUND)
-				set(PYTHONLIBS_FOUND TRUE)
-				set(NUMPY_FOUND TRUE)
-			endif()
-		endif()
-	else()
-		# Original build system behavior
-		if(AUDASPACE_STANDALONE)
-			find_package(PythonLibs 3.2 ${PACKAGE_OPTION})
-			find_package(NumPy ${PACKAGE_OPTION})
-		endif()
+	if(AUDASPACE_STANDALONE)
+		find_package(PythonLibs 3.2 ${PACKAGE_OPTION})
+		find_package(NumPy ${PACKAGE_OPTION})
 	endif()
 
 	if(PYTHONLIBS_FOUND AND NUMPY_FOUND)
 		list(APPEND INCLUDE ${PYTHON_INCLUDE_DIRS} ${NUMPY_INCLUDE_DIRS})
 
 		if(WITH_PYTHON_MODULE)
-			if(DEFINED SKBUILD)
-				# For scikit-build-core, Python interpreter should already be available
-				set(PYTHONINTERP_FOUND TRUE)
-			else()
-				find_package(PythonInterp 3.2 ${PACKAGE_OPTION})
+			find_package(PythonInterp 3.2 ${PACKAGE_OPTION})
 
-				if(NOT PYTHONINTERP_FOUND)
-					set(WITH_PYTHON_MODULE FALSE)
-					message(WARNING "Python interpreter not found, module will not be built.")
-				endif()
+			if(NOT PYTHONINTERP_FOUND)
+				set(WITH_PYTHON_MODULE FALSE)
+				message(WARNING "Python interpreter not found, module will not be built.")
 			endif()
 		endif()
 
 		set(AUDASPACE_PY_LIBRARY -laudaspace-py)
 
-		if(WIN32 AND AUDASPACE_STANDALONE AND NOT DEFINED SKBUILD)
+		if(WIN32 AND AUDASPACE_STANDALONE)
 			file(GLOB PYTHON_DLLS ${LIBRARY_PATH}/Python/bin/*.dll)
 			list(APPEND DLLS ${PYTHON_DLLS})
 		endif()
@@ -913,7 +882,7 @@ if(WITH_SDL)
 endif()
 
 # WASAPI
-if(WITH_WASAPI AND WIN32)
+if(WITH_WASAPI)
 	set(WASAPI_SRC
 		plugins/wasapi/WASAPIDevice.cpp
 	)
@@ -995,30 +964,13 @@ add_library(audaspace ${LIBRARY_TYPE} ${SRC} ${HDR})
 target_link_libraries(audaspace ${LIBRARIES})
 set_target_properties(audaspace PROPERTIES SOVERSION ${AUDASPACE_VERSION})
 
-if(DEFINED SKBUILD)
-	# For scikit-build-core (self-contained wheels), install the main library to the same directory as Python module
-	install(TARGETS audaspace
-		LIBRARY DESTINATION .
-		RUNTIME DESTINATION .
-		ARCHIVE DESTINATION .
-	)
-	# Set RPATH for the main library to look for other libraries in the same directory
-	set_target_properties(audaspace PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
-	if(APPLE)
-		set_target_properties(audaspace PROPERTIES INSTALL_RPATH "@loader_path")
-		# Also set the install name for the main library so plugins can find it
-		set_target_properties(audaspace PROPERTIES BUILD_WITH_INSTALL_NAME_DIR TRUE)
-		set_target_properties(audaspace PROPERTIES INSTALL_NAME_DIR "@loader_path")
-	elseif(UNIX)
-		set_target_properties(audaspace PROPERTIES INSTALL_RPATH "$ORIGIN")
-	endif()
-elseif(AUDASPACE_STANDALONE)
+if(AUDASPACE_STANDALONE)
 	install(TARGETS audaspace
 		RUNTIME DESTINATION ${BIN_DESTINATION}
 		LIBRARY DESTINATION ${LIB_DESTINATION}
 		ARCHIVE DESTINATION ${LIB_DESTINATION}
 	)
-else()
+
 	install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/ DESTINATION include/audaspace)
 	install(FILES ${CMAKE_CURRENT_BINARY_DIR}/Audaspace.h DESTINATION include/audaspace)
 
@@ -1039,15 +991,7 @@ if(WITH_COREAUDIO AND PLUGIN_COREAUDIO)
 		set_target_properties(audcoreaudio PROPERTIES SOVERSION ${AUDASPACE_VERSION})
 	endif()
 	target_link_libraries(audcoreaudio audaspace ${COREAUDIO_LIBRARIES})
-	# Set RPATH for plugins to look for the main library in the same directory
-	set_target_properties(audcoreaudio PROPERTIES INSTALL_RPATH "$ORIGIN")
-	set_target_properties(audcoreaudio PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
-	# For scikit-build-core (self-contained wheels), install plugins in the same directory as main library
-	if(DEFINED SKBUILD)
-		install(TARGETS audcoreaudio DESTINATION .)
-	else()
-		install(TARGETS audcoreaudio DESTINATION ${DEFAULT_PLUGIN_PATH})
-	endif()
+	install(TARGETS audcoreaudio DESTINATION ${DEFAULT_PLUGIN_PATH})
 endif()
 
 if(WITH_FFMPEG AND PLUGIN_FFMPEG)
@@ -1055,18 +999,10 @@ if(WITH_FFMPEG AND PLUGIN_FFMPEG)
 	include_directories(${INCLUDE} ${FFMPEG_INCLUDE_DIRS})
 	add_library(audffmpeg SHARED ${FFMPEG_SRC} ${FFMPEG_HDR} ${HDR})
 	target_link_libraries(audffmpeg audaspace ${FFMPEG_LIBRARIES})
-	# Set RPATH for plugins to look for the main library in the same directory
-	set_target_properties(audffmpeg PROPERTIES INSTALL_RPATH "$ORIGIN")
-	set_target_properties(audffmpeg PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
 	if(WITH_VERSIONED_PLUGINS)
 		set_target_properties(audffmpeg PROPERTIES SOVERSION ${AUDASPACE_VERSION})
 	endif()
-	# For scikit-build-core (self-contained wheels), install plugins in the same directory as main library
-	if(DEFINED SKBUILD)
-		install(TARGETS audffmpeg DESTINATION .)
-	else()
-		install(TARGETS audffmpeg DESTINATION ${DEFAULT_PLUGIN_PATH})
-	endif()
+	install(TARGETS audffmpeg DESTINATION ${DEFAULT_PLUGIN_PATH})
 endif()
 
 if(WITH_JACK AND PLUGIN_JACK)
@@ -1078,18 +1014,10 @@ if(WITH_JACK AND PLUGIN_JACK)
 	else()
 		target_link_libraries(audjack audaspace ${JACK_LIBRARIES})
 	endif()
-	# Set RPATH for plugins to look for the main library in the same directory
-	set_target_properties(audjack PROPERTIES INSTALL_RPATH "$ORIGIN")
-	set_target_properties(audjack PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
 	if(WITH_VERSIONED_PLUGINS)
 		set_target_properties(audjack PROPERTIES SOVERSION ${AUDASPACE_VERSION})
 	endif()
-	# For scikit-build-core (self-contained wheels), install plugins in the same directory as main library
-	if(DEFINED SKBUILD)
-		install(TARGETS audjack DESTINATION .)
-	else()
-		install(TARGETS audjack DESTINATION ${DEFAULT_PLUGIN_PATH})
-	endif()
+	install(TARGETS audjack DESTINATION ${DEFAULT_PLUGIN_PATH})
 endif()
 
 if(WITH_LIBSNDFILE AND PLUGIN_LIBSNDFILE)
@@ -1100,15 +1028,7 @@ if(WITH_LIBSNDFILE AND PLUGIN_LIBSNDFILE)
 		set_target_properties(audlibsndfile PROPERTIES SOVERSION ${AUDASPACE_VERSION})
 	endif()
 	target_link_libraries(audlibsndfile audaspace ${LIBSNDFILE_LIBRARIES})
-	# Set RPATH for plugins to look for the main library in the same directory
-	set_target_properties(audlibsndfile PROPERTIES INSTALL_RPATH "$ORIGIN")
-	set_target_properties(audlibsndfile PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
-	# For scikit-build-core (self-contained wheels), install plugins in the same directory as main library
-	if(DEFINED SKBUILD)
-		install(TARGETS audlibsndfile DESTINATION .)
-	else()
-		install(TARGETS audlibsndfile DESTINATION ${DEFAULT_PLUGIN_PATH})
-	endif()
+	install(TARGETS audlibsndfile DESTINATION ${DEFAULT_PLUGIN_PATH})
 endif()
 
 if(WITH_OPENAL AND PLUGIN_OPENAL)
@@ -1119,15 +1039,7 @@ if(WITH_OPENAL AND PLUGIN_OPENAL)
 		set_target_properties(audopenal PROPERTIES SOVERSION ${AUDASPACE_VERSION})
 	endif()
 	target_link_libraries(audopenal audaspace ${OPENAL_LIBRARY})
-	# Set RPATH for plugins to look for the main library in the same directory
-	set_target_properties(audopenal PROPERTIES INSTALL_RPATH "$ORIGIN")
-	set_target_properties(audopenal PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
-	# For scikit-build-core (self-contained wheels), install plugins in the same directory as main library
-	if(DEFINED SKBUILD)
-		install(TARGETS audopenal DESTINATION .)
-	else()
-		install(TARGETS audopenal DESTINATION ${DEFAULT_PLUGIN_PATH})
-	endif()
+	install(TARGETS audopenal DESTINATION ${DEFAULT_PLUGIN_PATH})
 endif()
 
 if(WITH_PULSEAUDIO AND PLUGIN_PULSEAUDIO)
@@ -1142,15 +1054,7 @@ if(WITH_PULSEAUDIO AND PLUGIN_PULSEAUDIO)
 	else()
 		target_link_libraries(audpulseaudio audaspace ${LIBPULSE_LIBRARY})
 	endif()
-	# Set RPATH for plugins to look for the main library in the same directory
-	set_target_properties(audpulseaudio PROPERTIES INSTALL_RPATH "$ORIGIN")
-	set_target_properties(audpulseaudio PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
-	# For scikit-build-core (self-contained wheels), install plugins in the same directory as main library
-	if(DEFINED SKBUILD)
-		install(TARGETS audpulseaudio DESTINATION .)
-	else()
-		install(TARGETS audpulseaudio DESTINATION ${DEFAULT_PLUGIN_PATH})
-	endif()
+	install(TARGETS audpulseaudio DESTINATION ${DEFAULT_PLUGIN_PATH})
 endif()
 
 if(WITH_PIPEWIRE AND PLUGIN_PIPEWIRE)
@@ -1165,15 +1069,7 @@ if(WITH_PIPEWIRE AND PLUGIN_PIPEWIRE)
 	else()
 		target_link_libraries(audpipewire audaspace ${PIPEWIRE_LIBRARIES})
 	endif()
-	# Set RPATH for plugins to look for the main library in the same directory
-	set_target_properties(audpipewire PROPERTIES INSTALL_RPATH "$ORIGIN")
-	set_target_properties(audpipewire PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
-	# For scikit-build-core (self-contained wheels), install plugins in the same directory as main library
-	if(DEFINED SKBUILD)
-		install(TARGETS audpipewire DESTINATION .)
-	else()
-		install(TARGETS audpipewire DESTINATION ${DEFAULT_PLUGIN_PATH})
-	endif()
+	install(TARGETS audpipewire DESTINATION ${DEFAULT_PLUGIN_PATH})
 endif()
 
 if(WITH_SDL AND PLUGIN_SDL)
@@ -1184,18 +1080,10 @@ if(WITH_SDL AND PLUGIN_SDL)
 		set_target_properties(audsdl PROPERTIES SOVERSION ${AUDASPACE_VERSION})
 	endif()
 	target_link_libraries(audsdl audaspace ${SDL_LIBRARY})
-	# Set RPATH for plugins to look for the main library in the same directory
-	set_target_properties(audsdl PROPERTIES INSTALL_RPATH "$ORIGIN")
-	set_target_properties(audsdl PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
-	# For scikit-build-core (self-contained wheels), install plugins in the same directory as main library
-	if(DEFINED SKBUILD)
-		install(TARGETS audsdl DESTINATION .)
-	else()
-		install(TARGETS audsdl DESTINATION ${DEFAULT_PLUGIN_PATH})
-	endif()
+	install(TARGETS audsdl DESTINATION ${DEFAULT_PLUGIN_PATH})
 endif()
 
-if(WITH_WASAPI AND PLUGIN_WASAPI AND WIN32)
+if(WITH_WASAPI AND PLUGIN_WASAPI)
 	add_definitions(-DWASAPI_PLUGIN)
 	include_directories(${INCLUDE})
 	add_library(audwasapi SHARED ${WASAPI_SRC} ${WASAPI_HDR} ${HDR})
@@ -1203,15 +1091,7 @@ if(WITH_WASAPI AND PLUGIN_WASAPI AND WIN32)
 		set_target_properties(audwasapi PROPERTIES SOVERSION ${AUDASPACE_VERSION})
 	endif()
 	target_link_libraries(audwasapi audaspace ksuser)
-	# Set RPATH for plugins to look for the main library in the same directory
-	set_target_properties(audwasapi PROPERTIES INSTALL_RPATH "$ORIGIN")
-	set_target_properties(audwasapi PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
-	# For scikit-build-core (self-contained wheels), install plugins in the same directory as main library
-	if(DEFINED SKBUILD)
-		install(TARGETS audwasapi DESTINATION .)
-	else()
-		install(TARGETS audwasapi DESTINATION ${DEFAULT_PLUGIN_PATH})
-	endif()
+	install(TARGETS audwasapi DESTINATION ${DEFAULT_PLUGIN_PATH})
 endif()
 
 # dlls
@@ -1287,24 +1167,12 @@ if(WITH_C)
 	if(SEPARATE_C)
 		add_library(audaspace-c ${LIBRARY_TYPE} ${C_SRC} ${C_HDR})
 		target_link_libraries(audaspace-c audaspace)
-		# Set RPATH for the C library to look for the main library in the same directory
-		set_target_properties(audaspace-c PROPERTIES INSTALL_RPATH "$ORIGIN")
-		set_target_properties(audaspace-c PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
 		set_target_properties(audaspace-c PROPERTIES SOVERSION ${AUDASPACE_VERSION})
-		# For scikit-build-core (self-contained wheels), install in the same directory as main library
-		if(DEFINED SKBUILD)
-			install(TARGETS audaspace-c
-				LIBRARY DESTINATION .
-				RUNTIME DESTINATION .
-				ARCHIVE DESTINATION .
-			)
-		else()
-			install(TARGETS audaspace-c
-				RUNTIME DESTINATION ${BIN_DESTINATION}
-				LIBRARY DESTINATION ${LIB_DESTINATION}
-				ARCHIVE DESTINATION ${LIB_DESTINATION}
-			)
-		endif()
+		install(TARGETS audaspace-c
+			RUNTIME DESTINATION ${BIN_DESTINATION}
+			LIBRARY DESTINATION ${LIB_DESTINATION}
+			ARCHIVE DESTINATION ${LIB_DESTINATION}
+		)
 	endif()
 
 	if(AUDASPACE_STANDALONE)
@@ -1351,102 +1219,36 @@ if(WITH_PYTHON)
 			)
 	endif()
 
-	# Check if we're building with scikit-build-core
-	if(DEFINED SKBUILD)
-		# When building with scikit-build-core, create a module library with proper naming
-		add_library(aud MODULE ${PYTHON_SRC} ${PYTHON_HDR})
-		set_target_properties(aud PROPERTIES PREFIX "")
-		if(WIN32)
-			set_target_properties(aud PROPERTIES SUFFIX ".pyd")
-		else()
-			set_target_properties(aud PROPERTIES SUFFIX ".so")
-		endif()
-		# For scikit-build-core, we need to make sure dependencies are properly linked
-		# On Windows, we may need to handle Python library linking differently
-		if(WIN32)
-			# For Windows, scikit-build-core should provide Python libraries through the build environment
-			# If PYTHON_LIBRARIES is not set, try to find them using modern CMake
-			if(PYTHON_LIBRARIES)
-				target_link_libraries(aud audaspace ${PYTHON_LIBRARIES})
-			else()
-				# In scikit-build-core environment, Python libraries should be available
-				# Use the variables that should be set by the build environment
-				if(DEFINED Python3_LIBRARIES)
-					target_link_libraries(aud audaspace ${Python3_LIBRARIES})
-				else()
-					# Last resort: try to find Python again
-					find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
-					target_link_libraries(aud audaspace ${Python3_LIBRARIES})
-				endif()
-			endif()
-		else()
-			target_link_libraries(aud audaspace ${PYTHON_LIBRARIES})
-		endif()
-		# Include Python headers
-		include_directories(${PYTHON_INCLUDE_DIRS} ${NUMPY_INCLUDE_DIRS})
-		# Set C++ standard
-		set_target_properties(aud PROPERTIES CXX_STANDARD 17)
-		# Install the Python module and main library to the package root for self-contained wheels
-		install(TARGETS aud
-			LIBRARY DESTINATION .
-			RUNTIME DESTINATION .
+	add_library(audaspace-py ${LIBRARY_TYPE} ${PYTHON_SRC} ${PYTHON_HDR})
+	target_link_libraries(audaspace-py audaspace ${PYTHON_LIBRARIES})
+	set_target_properties(audaspace-py PROPERTIES SOVERSION ${AUDASPACE_VERSION})
+
+	if(AUDASPACE_STANDALONE)
+		install(TARGETS audaspace-py
+			RUNTIME DESTINATION ${BIN_DESTINATION}
+			LIBRARY DESTINATION ${LIB_DESTINATION}
+			ARCHIVE DESTINATION ${LIB_DESTINATION}
 		)
-		# Also install the main audaspace library to the same location
-		install(TARGETS audaspace
-			LIBRARY DESTINATION .
-			RUNTIME DESTINATION .
-		)
-		# Set RPATH to look for libraries in the same directory as the module
-		# On Windows, RPATH is not used
-		if(WIN32)
-			# On Windows, we don't use RPATH, but DLLs should be in the same directory
+
+		install(FILES ${PYTHON_HDR} DESTINATION include/audaspace/python)
+	endif()
+
+	if(WITH_PYTHON_MODULE)
+		set(PYTHON_SOURCE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bindings/python)
+		configure_file(${PYTHON_SOURCE_DIRECTORY}/setup.py.in ${CMAKE_CURRENT_BINARY_DIR}/setup.py ESCAPE_QUOTES @ONLY)
+
+		if(APPLE)
+			add_custom_command(OUTPUT build COMMAND MACOSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET} ${PYTHON_EXECUTABLE} setup.py build DEPENDS ${PYTHON_SRC} ${PYTHON_HDR} setup.py)
+		elseif(WIN32)
+			set(ENV{VS100COMNTOOLS} $ENV{VS120COMNTOOLS})
+			add_custom_command(OUTPUT build COMMAND ${PYTHON_EXECUTABLE} setup.py build DEPENDS ${PYTHON_SRC} ${PYTHON_HDR} setup.py)
 		else()
-			set_target_properties(aud PROPERTIES BUILD_WITH_INSTALL_RPATH TRUE)
-
-			# On macOS, use @loader_path instead of $ORIGIN
-			if(APPLE)
-				set_target_properties(aud PROPERTIES INSTALL_RPATH "@loader_path")
-				# Also make sure the main library itself has the correct RPATH for plugins to find it
-				set_target_properties(audaspace PROPERTIES INSTALL_RPATH "@loader_path")
-			elseif(UNIX)
-				set_target_properties(aud PROPERTIES INSTALL_RPATH "$ORIGIN")
-				# Also make sure the main library itself has the correct RPATH for plugins to find it
-				set_target_properties(audaspace PROPERTIES INSTALL_RPATH "$ORIGIN")
-			endif()
+			add_custom_command(OUTPUT build COMMAND ${PYTHON_EXECUTABLE} setup.py build DEPENDS ${PYTHON_SRC} ${PYTHON_HDR} setup.py)
 		endif()
-	else()
-		# Original build system behavior
-		add_library(audaspace-py ${LIBRARY_TYPE} ${PYTHON_SRC} ${PYTHON_HDR})
-		target_link_libraries(audaspace-py audaspace ${PYTHON_LIBRARIES})
-		set_target_properties(audaspace-py PROPERTIES SOVERSION ${AUDASPACE_VERSION})
+		add_custom_target(pythonmodule ALL DEPENDS build SOURCES ${PYTHON_SOURCE_DIRECTORY}/setup.py.in ${PYTHON_SRC} ${PYTHON_HDR})
+		add_dependencies(pythonmodule audaspace)
 
-		if(AUDASPACE_STANDALONE)
-			install(TARGETS audaspace-py
-				RUNTIME DESTINATION ${BIN_DESTINATION}
-				LIBRARY DESTINATION ${LIB_DESTINATION}
-				ARCHIVE DESTINATION ${LIB_DESTINATION}
-			)
-
-			install(FILES ${PYTHON_HDR} DESTINATION include/audaspace/python)
-		endif()
-
-		if(WITH_PYTHON_MODULE)
-			set(PYTHON_SOURCE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bindings/python)
-			configure_file(${PYTHON_SOURCE_DIRECTORY}/setup.py.in ${CMAKE_CURRENT_BINARY_DIR}/setup.py ESCAPE_QUOTES @ONLY)
-
-			if(APPLE)
-				add_custom_command(OUTPUT build COMMAND MACOSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET} ${PYTHON_EXECUTABLE} setup.py build DEPENDS ${PYTHON_SRC} ${PYTHON_HDR} setup.py)
-			elseif(WIN32)
-				set(ENV{VS100COMNTOOLS} $ENV{VS120COMNTOOLS})
-				add_custom_command(OUTPUT build COMMAND ${PYTHON_EXECUTABLE} setup.py build DEPENDS ${PYTHON_SRC} ${PYTHON_HDR} setup.py)
-			else()
-				add_custom_command(OUTPUT build COMMAND ${PYTHON_EXECUTABLE} setup.py build DEPENDS ${PYTHON_SRC} ${PYTHON_HDR} setup.py)
-			endif()
-			add_custom_target(pythonmodule ALL DEPENDS build SOURCES ${PYTHON_SOURCE_DIRECTORY}/setup.py.in ${PYTHON_SRC} ${PYTHON_HDR})
-			add_dependencies(pythonmodule audaspace)
-
-			install(CODE "EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} setup.py install --root=\$ENV{DESTDIR} --prefix=${CMAKE_INSTALL_PREFIX})")
-		endif()
+		install(CODE "EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} setup.py install --root=\$ENV{DESTDIR} --prefix=${CMAKE_INSTALL_PREFIX})")
 	endif()
 endif()
 
