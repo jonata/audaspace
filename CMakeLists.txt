@@ -1236,6 +1236,20 @@ if(WITH_PYTHON)
 	endif()
 
 	if(WITH_PYTHON_MODULE)
+		# Create Python extension module for scikit-build-core
+		python_add_library(aud MODULE ${PYTHON_SRC} ${PYTHON_HDR})
+		target_link_libraries(aud PRIVATE audaspace ${Python3_LIBRARIES})
+		target_include_directories(aud PRIVATE ${Python3_INCLUDE_DIRS} ${NUMPY_INCLUDE_DIRS})
+		target_compile_definitions(aud PRIVATE VERSION_INFO=${AUDASPACE_LONG_VERSION})
+		if(WITH_FFTW)
+			target_compile_definitions(aud PRIVATE WITH_CONVOLUTION)
+		endif()
+		if(WITH_RUBBERBAND)
+			target_compile_definitions(aud PRIVATE WITH_RUBBERBAND)
+		endif()
+		install(TARGETS aud DESTINATION .)
+		
+		# Legacy setup.py system (kept for compatibility)
 		set(PYTHON_SOURCE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bindings/python)
 		configure_file(${PYTHON_SOURCE_DIRECTORY}/setup.py.in ${CMAKE_CURRENT_BINARY_DIR}/setup.py ESCAPE_QUOTES @ONLY)
 
